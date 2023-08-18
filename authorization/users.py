@@ -26,13 +26,7 @@ class Users:
                     self.refresh = resp['refresh_token']
                     jw = jwt.decode(resp['id_token'], options={'verify_signature': False})
                     self.sub = jw['sub']
-                    # async with session.post('https://auth.dodois.io/connect/token', data=settings.data,
-                    #                         headers=settings.headers) as subscribe:
-                    #     try:
-                    #         pass
-                    #     except ContentTypeError:
-                    #         logger.error(f'get_tokens - {response.status_code}')
-                    #         return {}
+
                 except ContentTypeError:
                     logger.error(f'get_tokens - {response} - {self.code}')
                     pass
