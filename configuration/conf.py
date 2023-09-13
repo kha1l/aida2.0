@@ -16,7 +16,7 @@ class Config:
     pyrus = os.getenv('PYRUS')
     key = os.getenv('KEY')
     scope = 'staffmembers:read openid stopsales deliverystatistics staffshifts:read productionefficiency ' \
-            'accounting user.role:read offline_access'
+            'accounting user.role:read shared marketplacesubscription:read offline_access'
     redirect = os.getenv('REDIRECT')
     verifier = os.getenv('VERIFIER')
     client = os.getenv('CLIENT')
