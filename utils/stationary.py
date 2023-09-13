@@ -2,6 +2,7 @@ from utils.connection import Connect
 from iso3166 import countries
 from loggs.logger import Log
 from database.postgres import Database
+from authorization.users import DataUser
 
 
 class Units:
@@ -42,3 +43,26 @@ class Units:
             'user_id': data[5]
         }
         self.units.append(units)
+
+
+async def add_stationary(access, id):
+    db = Database()
+    data = DataUser(access)
+    units = Units(id)
+    subs = await data.get_subs()
+    access_units = await units.get_units()
+    user_units = []
+    for data_units in access_units:
+        if data_units['uuid'] in subs:
+            data_units['subs'] = subs[data_units['uuid']][0]
+            data_units['expires'] = subs[data_units['uuid']][1]
+        else:
+            data_units['subs'] = 'free'
+            data_units['expires'] = 'forever'
+        user_units.append(data_units)
+        reach = db.check_stationary(data_units['uuid'])
+        if reach:
+            db.update_stationary(data_units)
+        else:
+            db.add_stationary(data_units)
+    return user_units

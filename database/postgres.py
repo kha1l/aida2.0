@@ -63,6 +63,14 @@ class Database:
         params = (user_id, sub)
         return self.execute(sql, parameters=params, fetchone=True)
 
+    def check_auth_id(self, user_id):
+        sql = '''
+            SELECT id FROM aida_users WHERE
+            user_id = %s;
+        '''
+        params = (user_id,)
+        return self.execute(sql, parameters=params, fetchall=True)
+
     def get_tokens(self, id):
         sql = '''
             SELECT id, access, refresh FROM aida_tokens WHERE user_id = %s
@@ -78,19 +86,20 @@ class Database:
         params = (unit['name'], unit['uuid'], unit['id'], unit['code'], unit['tz'], [unit['user_id']],
                   unit['sub'], unit['expires'])
         self.execute(sql, parameters=params, commit=True)
-    #
-    # def update_stationary(self, unit):
-    #     sql = '''
-    #         UPDATE aida_stationary
-    #         SET user_id = user_id || %s, subs = %s
-    #         WHERE NOT (user_id @> %s OR user_id = %s) AND uuid = %s;
-    #     '''
-    #     params = ([unit['user_id']], unit['sub'], [unit['user_id']], [unit['user_id']], unit['uuid'])
-    #     self.execute(sql, parameters=params, commit=True)
-    #
-    # def check_stationary(self, uuid):
-    #     sql = '''
-    #         SELECT EXISTS (SELECT 1 FROM aida_stationary WHERE uuid = %s);
-    #     '''
-    #     params = (uuid,)
-    #     return self.execute(sql, parameters=params, fetchone=True)
+
+    def update_stationary(self, unit):
+        sql = '''
+            UPDATE aida_stationary
+            SET user_id = user_id || %s, subs = %s, expires = %s
+            WHERE NOT (user_id @> %s OR user_id = %s) AND uuid = %s;
+        '''
+        params = ([unit['user_id']], unit['subs'], unit['expires'], [unit['user_id']],
+                  [unit['user_id']], unit['uuid'])
+        self.execute(sql, parameters=params, commit=True)
+
+    def check_stationary(self, uuid):
+        sql = '''
+            SELECT EXISTS (SELECT 1 FROM aida_stationary WHERE uuid = %s);
+        '''
+        params = (uuid,)
+        return self.execute(sql, parameters=params, fetchone=True)
