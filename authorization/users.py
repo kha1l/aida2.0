@@ -66,8 +66,8 @@ class DataUser:
         headers = self.headers
         headers["Authorization"] = f"Bearer {self.access}"
         async with aiohttp.ClientSession() as session:
-            async with session.post('https://api.dodois.io/marketplace/subscriptions',
-                                    headers=headers) as response:
+            async with session.get('https://api.dodois.io/marketplace/subscriptions',
+                                   headers=headers) as response:
                 try:
                     resp = await response.json()
                     for sub in resp['activeUserSubscriptions']:
@@ -77,6 +77,10 @@ class DataUser:
                 except ContentTypeError:
                     self.logger.error(f'get_datauser - {response} - {self.access}')
                     return self.subs
+                except KeyError:
+                    self.logger.error(f'get_datauser - {response} - {self.access}')
+                    return self.subs
+
 
 class Users:
     access = None
@@ -99,7 +103,9 @@ class Users:
                     self.refresh = resp['refresh_token']
                     jw = jwt.decode(resp['id_token'], options={'verify_signature': False})
                     self.sub = jw['sub']
-
                 except ContentTypeError:
                     logger.error(f'get_tokens - {response} - {self.code}')
+                    pass
+                except KeyError:
+                    logger.error(f'get_tokens_KEY_ERROR - {response} - {self.code}')
                     pass

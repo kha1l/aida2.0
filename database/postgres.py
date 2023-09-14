@@ -78,13 +78,20 @@ class Database:
         params = (id, )
         return self.execute(sql, parameters=params, fetchone=True)
 
+    def update_tokens(self, id, access, refresh):
+        sql = '''
+            UPDATE aida_tokens SET access = %s, refresh = %s WHERE user_id = %s
+        '''
+        params = (access, refresh, id)
+        self.execute(sql, parameters=params, commit=True)
+
     def add_stationary(self, unit):
         sql = '''
             INSERT INTO aida_stationary (name, uuid, unit_id, country_code, timezone, user_id, subs, expires)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
         '''
         params = (unit['name'], unit['uuid'], unit['id'], unit['code'], unit['tz'], [unit['user_id']],
-                  unit['sub'], unit['expires'])
+                  unit['subs'], unit['expires'])
         self.execute(sql, parameters=params, commit=True)
 
     def update_stationary(self, unit):
@@ -95,11 +102,12 @@ class Database:
         '''
         params = ([unit['user_id']], unit['subs'], unit['expires'], [unit['user_id']],
                   [unit['user_id']], unit['uuid'])
+        print(params)
         self.execute(sql, parameters=params, commit=True)
 
     def check_stationary(self, uuid):
         sql = '''
-            SELECT EXISTS (SELECT 1 FROM aida_stationary WHERE uuid = %s);
+            SELECT * FROM aida_stationary WHERE uuid = %s;
         '''
         params = (uuid,)
         return self.execute(sql, parameters=params, fetchone=True)

@@ -15,7 +15,7 @@ class Config:
     bot = Bot(token, parse_mode='HTML')
     pyrus = os.getenv('PYRUS')
     key = os.getenv('KEY')
-    scope = 'staffmembers:read openid stopsales deliverystatistics staffshifts:read productionefficiency ' \
+    scope = 'staffmembers:read email employee phone profile ext_profile openid stopsales deliverystatistics staffshifts:read productionefficiency ' \
             'accounting user.role:read shared marketplacesubscription:read offline_access'
     redirect = os.getenv('REDIRECT')
     verifier = os.getenv('VERIFIER')

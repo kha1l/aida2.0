@@ -1,7 +1,6 @@
 from utils.connection import Connect
 from iso3166 import countries
 from loggs.logger import Log
-from database.postgres import Database
 from authorization.users import DataUser
 
 
@@ -10,13 +9,11 @@ class Units:
         self.id = id
         self.units = []
 
-    async def get_units(self):
-        db = Database()
+    async def get_units(self, access):
         logger = Log("UNITS")
         conn = Connect()
-        access = db.get_tokens(self.id)
         try:
-            access_units = await conn.get_units(access=access[1])
+            access_units = await conn.get_units(access=access)
             if access_units:
                 code = countries.get(access_units[0]['countryCode']).alpha2.lower()
                 units_all = await conn.get_public_api(f'https://publicapi.dodois.io/{code}/api/v1/unitinfo/all')
@@ -45,12 +42,11 @@ class Units:
         self.units.append(units)
 
 
-async def add_stationary(access, id):
-    db = Database()
+async def add_stationary(id, access):
     data = DataUser(access)
     units = Units(id)
     subs = await data.get_subs()
-    access_units = await units.get_units()
+    access_units = await units.get_units(access)
     user_units = []
     for data_units in access_units:
         if data_units['uuid'] in subs:
@@ -60,9 +56,4 @@ async def add_stationary(access, id):
             data_units['subs'] = 'free'
             data_units['expires'] = 'forever'
         user_units.append(data_units)
-        reach = db.check_stationary(data_units['uuid'])
-        if reach:
-            db.update_stationary(data_units)
-        else:
-            db.add_stationary(data_units)
-    return user_units
+    return user_units, subs
