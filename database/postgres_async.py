@@ -109,3 +109,12 @@ class AsyncDatabase:
         '''
         params = (unit['uuid'], unit['subs'], unit['expires'])
         await self.execute(pool, sql, parameters=params, commit=True)
+
+    async def select_stationary(self, pool, id):
+        sql = '''
+            SELECT name, unit_id, uuid, country_code, timezone, subs, expires
+            FROM aida_stationary
+            WHERE $1 = ANY(user_id);
+        '''
+        params = (id,)
+        return await self.execute(pool, sql, parameters=params, fetchall=True)

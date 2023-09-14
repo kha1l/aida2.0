@@ -18,7 +18,6 @@ async def start_func(message: types.Message, state: FSMContext):
     code = message.get_args()
     user_id = str(message.from_user.id)
     mess = await message.answer(f'Идет сбор данных \U0001F4C0\nПодождите, пожалуйста')
-    stationary, subscribe = [], []
     if code:
         user = Users(code)
         await user.get_tokens()
@@ -64,29 +63,23 @@ async def start_func(message: types.Message, state: FSMContext):
             await message.answer(f'Привет, {message.from_user.full_name}! \n\n'
                                  f'Я - Aida. Присылаю мгновенные уведомления о стопах, тикетах, '
                                  f'днях рождения, отказах, ключевых метриках и отчетов по курьерам')
+    else:
+        accounts = await db.check_auth(pool, user_id)
+        if accounts:
+            units = await db.select_stationary(pool, accounts['id'])
+            await cleaner.delete_message(mess)
+            await message.answer(f'Привет, {message.from_user.full_name}! \n\n'
+                                 f'Я - Aida. Присылаю мгновенные уведомления о стопах, тикетах, '
+                                 f'днях рождения, отказах, ключевых метриках и отчетов по курьерам')
+            await state.update_data(units=units)
+        else:
+            await cleaner.delete_message(mess)
+            await message.answer(f'Привет, {message.from_user.full_name}\n\n'
+                                 f'Я - Aida. Присылаю мгновенные уведомления о стопах, тикетах,'
+                                 f'днях рождения, отказах, ключевых метриках и отчетов по курьерам\n'
+                                 f'Авторизуйтесь на странице приложения в маркетплейсе\n'
+                                 f'https://marketplace.dodois.io/apps/11ECF3AAF97D059CB9706F21406EBD11')
     await pool.close()
-    # else:
-    #     accounts = db.check_auth_id(user_id)
-    #     if accounts:
-    #         access = db.get_tokens(id)[1]
-    #         for acc in accounts:
-    #             access_units, subs = await add_stationary(acc)
-    #             stationary.extend(access_units)
-    #             subscribe.append(subs)
-    #             await cleaner.delete_message(mess)
-    #             await message.answer(f'Привет, {message.from_user.full_name}! \n\n'
-    #                                  f'Я - Aida. Присылаю мгновенные уведомления о стопах, тикетах, '
-    #                                  f'днях рождения, отказах, ключевых метриках и отчетов по курьерам')
-    #         await state.update_data(units=stationary)
-    #         print(stationary)
-    #         print(subscribe)
-    #     else:
-    #         await cleaner.delete_message(mess)
-    #         await message.answer(f'Привет, {message.from_user.full_name}\n\n'
-    #                              f'Я - Aida. Присылаю мгновенные уведомления о стопах, тикетах,'
-    #                              f'днях рождения, отказах, ключевых метриках и отчетов по курьерам\n'
-    #                              f'Авторизуйтесь на странице приложения в маркетплейсе\n'
-    #                              f'https://marketplace.dodois.io/apps/11ECF3AAF97D059CB9706F21406EBD11')
 
 
 if __name__ == '__main__':
