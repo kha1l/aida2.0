@@ -1,4 +1,4 @@
-from aiogram.utils.exceptions import MessageCantBeDeleted, MessageNotModified
+from aiogram.utils.exceptions import MessageCantBeDeleted, MessageNotModified, MessageToDeleteNotFound
 
 
 class Clean:
@@ -16,3 +16,11 @@ class Clean:
             await message.delete()
         except MessageNotModified:
             pass
+
+    @staticmethod
+    async def delete_markup(call):
+        try:
+            await call.message.delete_reply_markup()
+        except MessageToDeleteNotFound:
+            pass
+

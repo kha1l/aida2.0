@@ -57,3 +57,15 @@ async def add_stationary(id, access):
             data_units['expires'] = 'forever'
         user_units.append(data_units)
     return user_units, subs
+
+
+class Stationary:
+
+    def __init__(self, input_list):
+        self.input_list = input_list
+
+    def process_units(self):
+        units = []
+        for unit in self.input_list:
+            units.append(dict(unit))
+        return units

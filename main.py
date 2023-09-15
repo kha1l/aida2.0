@@ -4,9 +4,11 @@ from configuration.conf import Config
 from aiogram.dispatcher.filters import CommandStart
 from database.postgres_async import AsyncDatabase
 from utils.cleaners import Clean
-from utils.stationary import add_stationary
+from utils.stationary import add_stationary, Stationary
 from aiogram.dispatcher import FSMContext
 from authorization.users import Users, DataUser
+from bot.keyboard import KeyStart
+from bot.states import States
 
 
 @Config.dp.message_handler(CommandStart(), state=['*'])
@@ -42,7 +44,9 @@ async def start_func(message: types.Message, state: FSMContext):
             await cleaner.delete_message(mess)
             await message.answer(f'Привет, {message.from_user.full_name}! \n\n'
                                  f'Я - Aida. Присылаю мгновенные уведомления о стопах, тикетах, '
-                                 f'днях рождения, отказах, ключевых метриках и отчетов по курьерам')
+                                 f'днях рождения, отказах, ключевых метриках и отчетов по курьерам',
+                                 reply_markup=KeyStart.type_order)
+            await States.types.set()
 
         else:
             await db.update_tokens(pool, account['id'], user.access, user.refresh)
@@ -62,16 +66,22 @@ async def start_func(message: types.Message, state: FSMContext):
             await cleaner.delete_message(mess)
             await message.answer(f'Привет, {message.from_user.full_name}! \n\n'
                                  f'Я - Aida. Присылаю мгновенные уведомления о стопах, тикетах, '
-                                 f'днях рождения, отказах, ключевых метриках и отчетов по курьерам')
+                                 f'днях рождения, отказах, ключевых метриках и отчетов по курьерам',
+                                 reply_markup=KeyStart.type_order)
+            await States.types.set()
     else:
         accounts = await db.check_auth(pool, user_id)
         if accounts:
             units = await db.select_stationary(pool, accounts['id'])
+            rests = Stationary(units)
+            access_units = rests.process_units()
             await cleaner.delete_message(mess)
+            await state.update_data(units=access_units)
             await message.answer(f'Привет, {message.from_user.full_name}! \n\n'
                                  f'Я - Aida. Присылаю мгновенные уведомления о стопах, тикетах, '
-                                 f'днях рождения, отказах, ключевых метриках и отчетов по курьерам')
-            await state.update_data(units=units)
+                                 f'днях рождения, отказах, ключевых метриках и отчетов по курьерам',
+                                 reply_markup=KeyStart.type_order)
+            await States.types.set()
         else:
             await cleaner.delete_message(mess)
             await message.answer(f'Привет, {message.from_user.full_name}\n\n'
@@ -80,6 +90,23 @@ async def start_func(message: types.Message, state: FSMContext):
                                  f'Авторизуйтесь на странице приложения в маркетплейсе\n'
                                  f'https://marketplace.dodois.io/apps/11ECF3AAF97D059CB9706F21406EBD11')
     await pool.close()
+
+
+@Config.dp.callback_query_handler(KeyStart.callback.filter(), state=States.types)
+async def stationary(call: types.CallbackQuery, callback_data: dict, state: FSMContext):
+    data = await state.get_data()
+    print(callback_data)
+    print(data)
+    await state.finish()
+
+@Config.dp.callback_query_handler(text='exit', state="*")
+async def exit_work(call: types.CallbackQuery, state: FSMContext):
+    cleaner = Clean()
+    await cleaner.delete_markup(call)
+    await cleaner.delete_message(call.message)
+    await call.answer()
+    await call.message.answer(f'Управляйте ботом по команде /start \U0001F44B')
+    await state.finish()
 
 
 if __name__ == '__main__':

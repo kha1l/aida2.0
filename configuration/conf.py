@@ -39,3 +39,6 @@ class Settings:
         "Content-Type": "application/x-www-form-urlencoded",
         "user-agent": 'DodoVkus',
     }
+    subs = {
+
+    }
