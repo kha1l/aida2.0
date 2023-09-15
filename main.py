@@ -7,7 +7,7 @@ from utils.cleaners import Clean
 from utils.stationary import add_stationary, Stationary
 from aiogram.dispatcher import FSMContext
 from authorization.users import Users, DataUser
-from bot.keyboard import KeyStart
+from bot.keyboard import KeyStart, KeyTypes
 from bot.states import States
 
 
@@ -93,11 +93,44 @@ async def start_func(message: types.Message, state: FSMContext):
 
 
 @Config.dp.callback_query_handler(KeyStart.callback.filter(), state=States.types)
+async def subscribe(call: types.CallbackQuery, callback_data: dict, state: FSMContext):
+    cleaner = Clean()
+    await cleaner.delete_message(call.message)
+    subs = {}
+    data = await state.get_data()
+    for item in data["units"]:
+        sub = item['subs']
+        uuid = item['uuid']
+        if sub in subs:
+            subs[sub].append(uuid)
+        else:
+            subs[sub] = [uuid]
+    await state.update_data(units=data["units"], subs=subs)
+    key = KeyTypes(callback_data['type'], subs)
+    await key.set_key()
+    await call.message.answer(f'Выбери подписку:', reply_markup=key.orders)
+    await States.rest.set()
+
+
+@Config.dp.callback_query_handler(KeyTypes.callback_type.filter(), state=States.rest)
 async def stationary(call: types.CallbackQuery, callback_data: dict, state: FSMContext):
     data = await state.get_data()
-    print(callback_data)
     print(data)
+    print(callback_data)
     await state.finish()
+
+
+@Config.dp.callback_query_handler(text='back', state=[States.rest])
+async def back_work(call: types.CallbackQuery, state: FSMContext):
+    cleaner = Clean()
+    await cleaner.delete_message(call.message)
+    await call.answer()
+    await call.message.answer(f'Привет, {call.message.from_user.full_name}! \n\n'
+                              f'Я - Aida. Присылаю мгновенные уведомления о стопах, тикетах, '
+                              f'днях рождения, отказах, ключевых метриках и отчетов по курьерам',
+                              reply_markup=KeyStart.type_order)
+    await States.types.set()
+
 
 @Config.dp.callback_query_handler(text='exit', state="*")
 async def exit_work(call: types.CallbackQuery, state: FSMContext):

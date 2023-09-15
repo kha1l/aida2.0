@@ -118,3 +118,16 @@ class AsyncDatabase:
         '''
         params = (id,)
         return await self.execute(pool, sql, parameters=params, fetchall=True)
+
+    async def get_subs_id(self, pool):
+        sql = '''
+            SELECT id, name, function FROM aida_subs;
+        '''
+        return await self.execute(pool, sql, fetchall=True)
+
+    async def get_functions(self, pool, call):
+        sql = '''
+            SELECT name, alias FROM aida_functions WHERE groups = $1
+        '''
+        params = (call, )
+        return await self.execute(pool, sql, parameters=params, fetchall=True)
