@@ -131,3 +131,10 @@ class AsyncDatabase:
         '''
         params = (call, )
         return await self.execute(pool, sql, parameters=params, fetchall=True)
+
+    async def get_func(self, pool, group):
+        sql = '''
+            SELECT name, alias FROM aida_stops WHERE groups = $1
+        '''
+        params = (group,)
+        return await self.execute(pool, sql, parameters=params, fetchall=True)

@@ -7,7 +7,7 @@ from utils.cleaners import Clean
 from utils.stationary import add_stationary, Stationary
 from aiogram.dispatcher import FSMContext
 from authorization.users import Users, DataUser
-from bot.keyboard import KeyStart, KeyTypes
+from bot.keyboard import KeyStart, KeyTypes, KeyRest
 from bot.states import States
 
 
@@ -40,7 +40,8 @@ async def start_func(message: types.Message, state: FSMContext):
                         await db.update_stationary(pool, units)
                 else:
                     await db.add_stationary(pool, units)
-            await state.update_data(units=access_units)
+            sorted_units = sorted(access_units, key=lambda x: x["name"])
+            await state.update_data(units=sorted_units)
             await cleaner.delete_message(mess)
             await message.answer(f'Привет, {message.from_user.full_name}! \n\n'
                                  f'Я - Aida. Присылаю мгновенные уведомления о стопах, тикетах, '
@@ -62,7 +63,8 @@ async def start_func(message: types.Message, state: FSMContext):
                             await db.update_stationary_sub_and_expires(pool, units)
                 else:
                     await db.add_stationary(pool, units)
-            await state.update_data(units=access_units)
+            sorted_units = sorted(access_units, key=lambda x: x["name"])
+            await state.update_data(units=sorted_units)
             await cleaner.delete_message(mess)
             await message.answer(f'Привет, {message.from_user.full_name}! \n\n'
                                  f'Я - Aida. Присылаю мгновенные уведомления о стопах, тикетах, '
@@ -76,7 +78,8 @@ async def start_func(message: types.Message, state: FSMContext):
             rests = Stationary(units)
             access_units = rests.process_units()
             await cleaner.delete_message(mess)
-            await state.update_data(units=access_units)
+            sorted_units = sorted(access_units, key=lambda x: x["name"])
+            await state.update_data(units=sorted_units)
             await message.answer(f'Привет, {message.from_user.full_name}! \n\n'
                                  f'Я - Aida. Присылаю мгновенные уведомления о стопах, тикетах, '
                                  f'днях рождения, отказах, ключевых метриках и отчетов по курьерам',
@@ -105,22 +108,73 @@ async def subscribe(call: types.CallbackQuery, callback_data: dict, state: FSMCo
             subs[sub].append(uuid)
         else:
             subs[sub] = [uuid]
-    await state.update_data(units=data["units"], subs=subs)
     key = KeyTypes(callback_data['type'], subs)
     await key.set_key()
+    await state.update_data(units=data["units"], subs=subs, key=key, types=callback_data['type'])
     await call.message.answer(f'Выбери подписку:', reply_markup=key.orders)
     await States.rest.set()
 
 
-@Config.dp.callback_query_handler(KeyTypes.callback_type.filter(), state=States.rest)
+@Config.dp.callback_query_handler(text='stops', state=States.rest)
+async def stops_menu(call: types.CallbackQuery, state: FSMContext):
+    cleaner = Clean()
+    data = await state.get_data()
+    key = data['key']
+    await call.message.delete_reply_markup()
+    await key.set_stops()
+    await cleaner.delete_message(call.message)
+    await state.update_data(key=key)
+    await call.message.answer(f'Стопы', reply_markup=key.stops)
+    await States.stops.set()
+
+
+@Config.dp.callback_query_handler(KeyTypes.callback_type.filter(), state=[States.rest, States.stops])
 async def stationary(call: types.CallbackQuery, callback_data: dict, state: FSMContext):
     data = await state.get_data()
-    print(data)
-    print(callback_data)
-    await state.finish()
+    key = data['key']
+    subs_dict = key.subs_dict
+    key_rest = KeyRest()
+    orders = []
+    await key_rest.set_rest(callback_data['order'], data['units'], orders, subs_dict)
+    await call.message.answer(f'Выбери заведения:', reply_markup=key_rest.rest)
+    await state.update_data(orders=orders, key=key, order=callback_data['order'], subs_dict=subs_dict)
+    await States.pizza.set()
 
 
-@Config.dp.callback_query_handler(text='back', state=[States.rest])
+@Config.dp.callback_query_handler(KeyRest.callback_rest.filter(), state=States.pizza)
+async def stationary(call: types.CallbackQuery, callback_data: dict, state: FSMContext):
+    cleaner = Clean()
+    data = await state.get_data()
+    orders = data['orders']
+    uuid = callback_data.get('unit')
+    if uuid != 'commit':
+        if uuid in orders:
+            orders.remove(uuid)
+        else:
+            orders.append(uuid)
+        key = KeyRest()
+        await key.set_rest(data['order'], data['units'], orders, data['subs_dict'])
+        await state.update_data(orders=orders)
+        await cleaner.edit_markup(call, key.rest)
+    else:
+        await cleaner.delete_markup(call)
+        await cleaner.delete_message(call.message)
+        try:
+            params = data['units'][0]
+            code = params['country_code']
+            tz = params['timezone']
+            print(data['order'])
+            print(data['orders'])
+            print(code)
+            print(tz)
+            print(call.message.chat.id)
+            print(call.from_user.id)
+        except IndexError:
+            pass
+        await state.finish()
+
+
+@Config.dp.callback_query_handler(text='back', state=[States.rest, States.pizza, States.stops])
 async def back_work(call: types.CallbackQuery, state: FSMContext):
     cleaner = Clean()
     await cleaner.delete_message(call.message)

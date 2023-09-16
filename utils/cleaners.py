@@ -24,3 +24,9 @@ class Clean:
         except MessageToDeleteNotFound:
             pass
 
+    @staticmethod
+    async def edit_markup(call, key):
+        try:
+            await call.message.edit_reply_markup(reply_markup=key)
+        except MessageNotModified:
+            pass
