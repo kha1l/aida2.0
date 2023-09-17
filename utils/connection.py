@@ -55,3 +55,40 @@ class Connect:
                 except ContentTypeError:
                     logger.error(f'ERROR update_tokens - {self.response}')
                     return {}
+
+
+async def post_api(url, access, **kwargs) -> dict:
+    data = {}
+    logger = Log('API')
+    for key, value in kwargs.items():
+        if key == '_from':
+            data['from'] = value
+        else:
+            data[key] = value
+    headers = {
+        "user-agent": 'DodoVkus',
+        "Content-Type": "application/x-www-form-urlencoded",
+        "Authorization": f"Bearer {access}"
+    }
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url, headers=headers, params=data) as response:
+            try:
+                if response.status == 200:
+                    response = await response.json()
+                    return response
+                else:
+                    logger.error(f'ERROR post_api - {response}')
+                    return {}
+            except ContentTypeError:
+                logger.error(f'ERROR post_api - {response}')
+                return {}
+
+
+async def public_api(url) -> dict:
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url) as response:
+            try:
+                response = await response.json()
+                return response
+            except ContentTypeError:
+                return {}

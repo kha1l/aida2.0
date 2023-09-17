@@ -194,3 +194,30 @@ class AsyncDatabase:
             SELECT id, uuid, user_id FROM aida_stationary
         '''
         return await self.execute(pool, sql, fetchall=True)
+
+    async def select_orders(self, pool, post):
+        sql = '''
+            SELECT aida_tokens.access, aida_orders.uuid, aida_orders.country, aida_orders.timezone, 
+            aida_orders.chat_id, aida_orders.id
+            FROM aida_orders JOIN aida_tokens ON aida_tokens.user_id = aida_orders.user_id
+            WHERE aida_orders.post = $1;
+        '''
+        params = (post, )
+        return await self.execute(pool, sql, parameters=params, fetchall=True)
+
+    async def select_orders_metrics(self, pool, post, chat):
+        sql = '''
+            SELECT aida_tokens.access, aida_orders.uuid, aida_orders.country, aida_orders.timezone, 
+            aida_orders.chat_id, aida_orders.id
+            FROM aida_orders JOIN aida_tokens ON aida_tokens.user_id = aida_orders.user_id
+            WHERE aida_orders.post = $1 AND aida_orders.chat_id = $2;
+        '''
+        params = (post, chat)
+        return await self.execute(pool, sql, parameters=params, fetchall=True)
+
+    async def get_data_rest(self, pool, uuid):
+        sql = '''
+            SELECT name, unit_id FROM aida_stationary WHERE uuid = $1
+        '''
+        params = (uuid, )
+        return await self.execute(pool, sql, parameters=params, fetchone=True)

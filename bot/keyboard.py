@@ -182,3 +182,33 @@ class KeyOut:
             callback_data='back'
         )
         self.out.add(back)
+
+
+class KeyStats:
+    wait_callback = CallbackData('w', 'func_id')
+
+    def __init__(self, order, uuid, tz):
+        self.stats = InlineKeyboardMarkup(row_width=1, inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text=f'\U0001F4A4 Ожидания курьеров',
+                    callback_data=self.wait_callback.new(func_id=f'w.{order}.{uuid}.{tz}')
+                )],
+            # [
+            #     InlineKeyboardButton(
+            #         text=f'\U0000231A Опоздания/прогулы',
+            #         callback_data=self.wait_callback.new(func_id=f'l.{order}.{uuid}.{tz}')
+            #     )],
+            [
+                InlineKeyboardButton(
+                    text=f'\U0001F4D1 Сертификаты',
+                    callback_data=self.wait_callback.new(func_id=f'c.{order}.{uuid}.{tz}')
+                )]
+        ])
+        self.stationary = InlineKeyboardMarkup(row_width=1, inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text=f'\U0001F4C3 Опоздания в ресторане',
+                    callback_data=self.wait_callback.new(func_id=f's.{order}.{uuid}.{tz}')
+                )]
+        ])

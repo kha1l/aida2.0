@@ -9,12 +9,25 @@ from aiogram.dispatcher import FSMContext
 from authorization.users import Users, DataUser
 from bot.keyboard import KeyStart, KeyTypes, KeyRest, KeySettings, KeyOut
 from bot.states import States
-from utils.update import update_tokens_app, update_subs_day
+from utils.update import update_tokens_app, update_subs
+from functions.birthday import send_birthday
+from functions.refusal import send_refusal
+from functions.metrics import send_metrics, command_metrics
+from functions.stops import stops_rest, stops_sector, stops_ings, stops_key_ings
+from aiogram.dispatcher.filters import Command
+from datetime import datetime
 
 
 # Config.scheduler.add_job(update_tokens, 'interval', hours=6)
 # Config.scheduler.add_job(update_subs_day, 'cron', day_of_week='*', hour=17, minute=0)
 Config.scheduler.add_job(update_tokens_app, 'cron', day_of_week="*", hour=17, minute=32)
+Config.scheduler.add_job(send_birthday, 'cron', day_of_week="*", hour='0-13/1', minute=15)
+Config.scheduler.add_job(send_metrics, 'cron', day_of_week="*", hour='0-23', minute=48)
+Config.scheduler.add_job(send_refusal, 'cron', day_of_week="*", hour='0-23', minute=7)
+Config.scheduler.add_job(stops_key_ings, 'interval', minutes=10, start_date=datetime(2023, 9, 17, 20, 34, 0))
+Config.scheduler.add_job(stops_ings, 'interval', minutes=10, start_date=datetime(2023, 9, 17, 20, 37, 0))
+Config.scheduler.add_job(stops_rest, 'interval', minutes=10, start_date=datetime(2023, 9, 17, 20, 40, 0))
+Config.scheduler.add_job(stops_sector, 'interval', minutes=10, start_date=datetime(2023, 9, 17, 20, 43, 0))
 
 
 @Config.dp.message_handler(CommandStart(), state=['*'])
@@ -98,6 +111,16 @@ async def start_func(message: types.Message, state: FSMContext):
                                  f'днях рождения, отказах, ключевых метриках и отчетов по курьерам\n'
                                  f'Авторизуйтесь на странице приложения в маркетплейсе\n'
                                  f'https://marketplace.dodois.io/apps/11ECF3AAF97D059CB9706F21406EBD44')
+    await pool.close()
+
+
+@Config.dp.message_handler(Command(commands=["metrics"]), state=['*'])
+async def cmd_metrics(message: types.Message):
+    db = AsyncDatabase()
+    pool = await db.create_pool()
+    orders = await db.select_orders_metrics(pool, 'metrics', str(message.chat.id))
+    for order in orders:
+        await command_metrics(order, db, pool)
     await pool.close()
 
 
@@ -242,8 +265,12 @@ async def stationary(call: types.CallbackQuery, callback_data: dict, state: FSMC
     subs_dict = key.subs_dict
     key_rest = KeyRest()
     params = data['units'][0]
-    code = params['country_code']
-    tz = params['timezone']
+    try:
+        code = params['country_code']
+        tz = params['timezone']
+    except KeyError:
+        code = 'ru'
+        tz = 3
     state_now = await state.get_state()
     orders = await db.get_orders(pool, str(call.message.chat.id), callback_data['order'], code, tz)
     if orders:
