@@ -140,7 +140,7 @@ class KeySettings:
             )],
         [
             InlineKeyboardButton(
-                text=f'\U0001F504 Обновить подписку',
+                text=f'\U0001F504 Обновить подписку/заведение',
                 callback_data=call_settings.new(types='update')
             )],
         [

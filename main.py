@@ -5,16 +5,16 @@ from aiogram.dispatcher.filters import CommandStart
 from database.postgres_async import AsyncDatabase
 from utils.cleaners import Clean
 from utils.stationary import add_stationary, Stationary
-from utils.update import update_subs
 from aiogram.dispatcher import FSMContext
 from authorization.users import Users, DataUser
 from bot.keyboard import KeyStart, KeyTypes, KeyRest, KeySettings, KeyOut
 from bot.states import States
-from utils.update import update_tokens_app
+from utils.update import update_tokens_app, update_subs_day
 
 
 # Config.scheduler.add_job(update_tokens, 'interval', hours=6)
-Config.scheduler.add_job(update_tokens_app, 'cron', day_of_week="*", hour=14, minute=37)
+# Config.scheduler.add_job(update_subs_day, 'cron', day_of_week='*', hour=17, minute=0)
+Config.scheduler.add_job(update_tokens_app, 'cron', day_of_week="*", hour=17, minute=32)
 
 
 @Config.dp.message_handler(CommandStart(), state=['*'])
@@ -97,7 +97,7 @@ async def start_func(message: types.Message, state: FSMContext):
                                  f'Я - Aida. Присылаю мгновенные уведомления о стопах, тикетах,'
                                  f'днях рождения, отказах, ключевых метриках и отчетов по курьерам\n'
                                  f'Авторизуйтесь на странице приложения в маркетплейсе\n'
-                                 f'https://marketplace.dodois.io/apps/11ECF3AAF97D059CB9706F21406EBD11')
+                                 f'https://marketplace.dodois.io/apps/11ECF3AAF97D059CB9706F21406EBD44')
     await pool.close()
 
 
@@ -131,9 +131,26 @@ async def call_settings(call: types.CallbackQuery, callback_data: dict, state: F
         await States.out_call.set()
     else:
         await call.answer()
+        mess = await call.message.answer(f'Идет сбор данных \U0001F4C0\nПодождите, пожалуйста')
+        add_units, upd_units = await update_subs(id=data['user_id'])
+        if add_units and upd_units:
+            await call.message.answer(f'Обновлены данные у следующих заведений: '
+                                      f'{", ".join(str(row) for row in upd_units)}\n\n'
+                                      f'Добавлены следующие заведения: {", ".join(str(row) for row in add_units)}')
+            await cleaner.delete_message(mess)
+        elif add_units:
+            await call.message.answer(f'Добавлены следующие заведения: {", ".join(str(row) for row in add_units)}')
+            await cleaner.delete_message(mess)
+        elif upd_units:
+            await call.message.answer(f'Обновлены данные у следующих заведений: '
+                                      f'{", ".join(str(row) for row in upd_units)}')
+            await cleaner.delete_message(mess)
+        else:
+            await call.message.answer(f'Изменения не найдены. Попробуйте позднее, возможно данные еще '
+                                      f'не успели обновиться.')
+            await cleaner.delete_message(mess)
         await call.message.answer(f'Настройки приложения: \U0001F9BE', reply_markup=KeySettings.setting)
         await States.settings.set()
-        await update_subs(units=data['units'], id=data['user_id'])
     await pool.close()
 
 

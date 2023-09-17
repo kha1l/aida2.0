@@ -191,6 +191,6 @@ class AsyncDatabase:
 
     async def get_stationary(self, pool):
         sql = '''
-            SELECT uuid, user_id FROM aida_stationary
+            SELECT id, uuid, user_id FROM aida_stationary
         '''
         return await self.execute(pool, sql, fetchall=True)
