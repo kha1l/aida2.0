@@ -20,7 +20,7 @@ class KeyStart:
         [
             InlineKeyboardButton(
                 text=f'\U0001F6E0 Настройки',
-                callback_data=callback.new(type='settings')
+                callback_data='settings'
             )],
         [
             InlineKeyboardButton(
@@ -123,3 +123,62 @@ class KeyRest:
         )
         self.rest.add(commit)
         self.rest.add(back)
+
+
+class KeySettings:
+    call_settings = CallbackData('set', 'types')
+    setting = InlineKeyboardMarkup(row_width=1, inline_keyboard=[
+        [
+            InlineKeyboardButton(
+                text=f'\U0001F515 Отключить уведомления',
+                callback_data=call_settings.new(types='remove')
+            )],
+        [
+            InlineKeyboardButton(
+                text=f'\U0001F4F1 Управлять приложением',
+                url='https://marketplace.dodois.io/apps/11ECF3AAF97D059CB9706F21406EBD44'
+            )],
+        [
+            InlineKeyboardButton(
+                text=f'\U0001F504 Обновить подписку',
+                callback_data=call_settings.new(types='update')
+            )],
+        [
+            InlineKeyboardButton(
+                text=f'\U0001F519 Назад',
+                callback_data='back'
+            )]
+    ])
+
+
+class KeyOut:
+    callback_out = CallbackData('s', 'sub')
+    post = {
+        'stops_rest': '\U0001F3E2 Стопы по каналам продаж',
+        'stops_ings': '\U0001F9C0 Стопы по ингредиентам',
+        'stops_key_ings': '\U0001F355 Стопы по ключевым ингредиентам',
+        'stops_sector': '\U0001F5FE Стопы по секторам',
+        'tickets': '\U0001F4D8 Тикеты клиентов',
+        'birthday': '\U0001F389 Дни рождения',
+        'couriers': '\U0001F69B Отчеты по курьерам',
+        'refusal': '\U0001F17E Отмененные заказы',
+        'metrics': '\U0001F4C9 Ключевые метрики',
+        'stationary': '\U0001F373 Опоздания в ресторане',
+        'revenue': '\U0001F4B5 Выручка по сети',
+        'stock': '\U0001F69A Складские остатки',
+        'staff': '\U0001F9FE Информация о сотрудниках'
+    }
+
+    def __init__(self, subs):
+        self.out = InlineKeyboardMarkup(row_width=1)
+        for sub in subs:
+            button = InlineKeyboardButton(
+                text=f"{self.post[sub]}",
+                callback_data=self.callback_out.new(sub=f"{sub}")
+            )
+            self.out.insert(button)
+        back = InlineKeyboardButton(
+            text=f'\U0001F519 Назад',
+            callback_data='back'
+        )
+        self.out.add(back)

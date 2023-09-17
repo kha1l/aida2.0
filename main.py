@@ -5,9 +5,10 @@ from aiogram.dispatcher.filters import CommandStart
 from database.postgres_async import AsyncDatabase
 from utils.cleaners import Clean
 from utils.stationary import add_stationary, Stationary
+from utils.update_subs import update
 from aiogram.dispatcher import FSMContext
 from authorization.users import Users, DataUser
-from bot.keyboard import KeyStart, KeyTypes, KeyRest
+from bot.keyboard import KeyStart, KeyTypes, KeyRest, KeySettings, KeyOut
 from bot.states import States
 
 
@@ -95,6 +96,77 @@ async def start_func(message: types.Message, state: FSMContext):
     await pool.close()
 
 
+@Config.dp.callback_query_handler(text='settings', state="*")
+async def settings_work(call: types.CallbackQuery):
+    cleaner = Clean()
+    await cleaner.delete_markup(call)
+    await cleaner.delete_message(call.message)
+    await call.answer()
+    await call.message.answer(f'Настройки приложения: \U0001F9BE', reply_markup=KeySettings.setting)
+    await States.settings.set()
+
+
+@Config.dp.callback_query_handler(KeySettings.call_settings.filter(), state=States.settings)
+async def call_settings(call: types.CallbackQuery, callback_data: dict, state: FSMContext):
+    cleaner = Clean()
+    subs_list = []
+    chat = str(call.message.chat.id)
+    db = AsyncDatabase()
+    pool = await db.create_pool()
+    await cleaner.delete_markup(call)
+    await cleaner.delete_message(call.message)
+    if callback_data['types'] == 'remove':
+        subs = await db.get_subs(pool, chat)
+        for sub in subs:
+            subs_list.append(sub['post'])
+        key = KeyOut(subs_list)
+        await state.update_data(subs=subs_list, chat_id=chat)
+        await call.message.answer(f'Выберите уведомления(отчёты), которые хотите отключить.', reply_markup=key.out)
+        await States.out_call.set()
+    else:
+        await call.answer()
+        await call.message.answer(f'Настройки приложения: \U0001F9BE', reply_markup=KeySettings.setting)
+        await States.settings.set()
+        await update()
+    await pool.close()
+
+
+@Config.dp.callback_query_handler(KeyOut.callback_out.filter(), state=States.out_call)
+async def out_subs(call: types.CallbackQuery, callback_data: dict, state: FSMContext):
+    cleaner = Clean()
+    await cleaner.delete_markup(call)
+    await cleaner.delete_message(call.message)
+    db = AsyncDatabase()
+    pool = await db.create_pool()
+    data = await state.get_data()
+    subs_list = data['subs']
+    post = callback_data.get('sub')
+    name = {
+        'stops_rest': 'стопах по каналам продаж',
+        'stops_ings': 'стопах по ингредиентам',
+        'stops_key_ings': 'стопах по ключевым ингредиентам',
+        'stops_sector': 'стопах по секторам',
+        'tickets': 'тикетах клиентов',
+        'birthday': 'днях рождения',
+        'couriers': 'отчетах о курьерах',
+        'refusal': 'отмененных заказах',
+        'metrics': 'ключевых метрик',
+        'stationary': 'опозданиях в ресторане',
+        'revenue': 'выручке по сети',
+        'stock': 'складских остатках',
+        'staff': 'информации о сотрудниках'
+    }
+    try:
+        subs_list.remove(post)
+        key = KeyOut(subs_list)
+        await db.remove_order(pool, data['chat_id'], post)
+        await state.update_data(subs=subs_list)
+        await call.message.answer(f'Вы отключили уведомления о {name[post]}', reply_markup=key.out)
+    except ValueError:
+        pass
+    await pool.close()
+
+
 @Config.dp.callback_query_handler(KeyStart.callback.filter(), state=States.types)
 async def subscribe(call: types.CallbackQuery, callback_data: dict, state: FSMContext):
     cleaner = Clean()
@@ -113,7 +185,6 @@ async def subscribe(call: types.CallbackQuery, callback_data: dict, state: FSMCo
         dict_name[unit['uuid']] = unit['name']
     key = KeyTypes(callback_data['type'], subs)
     state_now = await state.get_state()
-    print(state_now)
     await key.set_key()
     await state.update_data(name=dict_name, subs=subs, key=key, types=callback_data['type'], stc=state_now)
     await call.message.answer(f'Выбери подписку:', reply_markup=key.orders)
@@ -125,7 +196,7 @@ async def stops_menu(call: types.CallbackQuery, state: FSMContext):
     cleaner = Clean()
     data = await state.get_data()
     key = data['key']
-    await call.message.delete_reply_markup()
+    await cleaner.delete_markup(call)
     await key.set_stops()
     await cleaner.delete_message(call.message)
     await state.update_data(key=key)
@@ -136,7 +207,7 @@ async def stops_menu(call: types.CallbackQuery, state: FSMContext):
 @Config.dp.callback_query_handler(KeyTypes.callback_type.filter(), state=[States.rest, States.stops])
 async def stationary(call: types.CallbackQuery, callback_data: dict, state: FSMContext):
     cleaner = Clean()
-    await call.message.delete_reply_markup()
+    await cleaner.delete_markup(call)
     await cleaner.delete_message(call.message)
     in_orders = False
     id_order = 0
@@ -151,7 +222,6 @@ async def stationary(call: types.CallbackQuery, callback_data: dict, state: FSMC
     code = params['country_code']
     tz = params['timezone']
     state_now = await state.get_state()
-    print(state_now)
     orders = await db.get_orders(pool, str(call.message.chat.id), callback_data['order'], code, tz)
     if orders:
         in_orders = True
@@ -222,27 +292,38 @@ async def stationary(call: types.CallbackQuery, callback_data: dict, state: FSMC
             await States.rest.set()
 
 
-@Config.dp.callback_query_handler(text='back', state=[States.rest, States.pizza, States.stops])
+@Config.dp.callback_query_handler(text='back', state='*')
 async def back_work(call: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
     cleaner = Clean()
-    key = data['key']
-    await cleaner.delete_message(call.message)
-    await call.answer()
-    if data['stc'] == 'States:stops':
-        await call.message.answer(f'Стопы', reply_markup=key.stops)
-        await state.update_data(stc='States:rest')
-        await States.stops.set()
-    elif data['stc'] == 'States:rest':
-        await call.message.answer(f'Выбери подписку:', reply_markup=key.orders)
-        await state.update_data(stc='States:types')
-        await States.rest.set()
-    else:
-        await call.message.answer(f'Привет, {call.message.from_user.full_name}! \n\n'
-                                  f'Я - Aida. Присылаю мгновенные уведомления о стопах, тикетах, '
-                                  f'днях рождения, отказах, ключевых метриках и отчетов по курьерам',
-                                  reply_markup=KeyStart.type_order)
-        await States.types.set()
+    try:
+        key = data['key']
+        await cleaner.delete_message(call.message)
+        await call.answer()
+        if data['stc'] == 'States:stops':
+            await call.message.answer(f'Стопы', reply_markup=key.stops)
+            await state.update_data(stc='States:rest')
+            await States.stops.set()
+        elif data['stc'] == 'States:rest':
+            await call.message.answer(f'Выбери подписку:', reply_markup=key.orders)
+            await state.update_data(stc='States:types')
+            await States.rest.set()
+        else:
+            await call.message.answer(f'Привет, {call.message.from_user.full_name}! \n\n'
+                                      f'Я - Aida. Присылаю мгновенные уведомления о стопах, тикетах, '
+                                      f'днях рождения, отказах, ключевых метриках и отчетов по курьерам',
+                                      reply_markup=KeyStart.type_order)
+            await States.types.set()
+    except KeyError:
+        if await state.get_state() == 'States:out_call':
+            await call.message.answer(f'Настройки приложения: \U0001F9BE', reply_markup=KeySettings.setting)
+            await States.settings.set()
+        else:
+            await call.message.answer(f'Привет, {call.message.from_user.full_name}! \n\n'
+                                      f'Я - Aida. Присылаю мгновенные уведомления о стопах, тикетах, '
+                                      f'днях рождения, отказах, ключевых метриках и отчетов по курьерам',
+                                      reply_markup=KeyStart.type_order)
+            await States.types.set()
 
 
 @Config.dp.callback_query_handler(text='exit', state="*")

@@ -168,3 +168,17 @@ class AsyncDatabase:
         '''
         params = (id, )
         await self.execute(pool, sql, parameters=params, commit=True)
+
+    async def remove_order(self, pool, chat, post):
+        sql = '''
+            DELETE FROM aida_orders WHERE chat_id = $1 AND post = $2
+        '''
+        params = (chat, post)
+        await self.execute(pool, sql, parameters=params, commit=True)
+
+    async def get_subs(self, pool, chat):
+        sql = '''
+            SELECT post FROM aida_orders WHERE chat_id = $1
+        '''
+        params = (chat,)
+        return await self.execute(pool, sql, parameters=params, fetchall=True)

@@ -6,3 +6,5 @@ class States(StatesGroup):
     rest = State()
     stops = State()
     pizza = State()
+    settings = State()
+    out_call = State()
