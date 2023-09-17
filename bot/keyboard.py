@@ -59,7 +59,7 @@ class KeyTypes:
                 self.func_name[func['name']] = func['alias']
                 if func['name'] == 'stops':
                     button = InlineKeyboardButton(
-                        text=func['alias'],
+                        text=f"{func['alias']}",
                         callback_data=func['name']
                     )
                 else:

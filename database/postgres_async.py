@@ -66,9 +66,15 @@ class AsyncDatabase:
         params = (id,)
         return await self.execute(pool, sql, parameters=params, fetchone=True)
 
+    async def select_tokens(self, pool):
+        sql = '''
+            SELECT id, access, refresh FROM aida_tokens
+        '''
+        return await self.execute(pool, sql, fetchall=True)
+
     async def update_tokens(self, pool, id, access, refresh):
         sql = '''
-            UPDATE aida_tokens SET access = $1, refresh = $2 WHERE user_id = $3
+            UPDATE aida_tokens SET access = $1, refresh = $2 WHERE id = $3
         '''
         params = (access, refresh, id)
         await self.execute(pool, sql, parameters=params, commit=True)
@@ -182,3 +188,9 @@ class AsyncDatabase:
         '''
         params = (chat,)
         return await self.execute(pool, sql, parameters=params, fetchall=True)
+
+    async def get_stationary(self, pool):
+        sql = '''
+            SELECT uuid, user_id FROM aida_stationary
+        '''
+        return await self.execute(pool, sql, fetchall=True)

@@ -5,11 +5,16 @@ from aiogram.dispatcher.filters import CommandStart
 from database.postgres_async import AsyncDatabase
 from utils.cleaners import Clean
 from utils.stationary import add_stationary, Stationary
-from utils.update_subs import update
+from utils.update import update_subs
 from aiogram.dispatcher import FSMContext
 from authorization.users import Users, DataUser
 from bot.keyboard import KeyStart, KeyTypes, KeyRest, KeySettings, KeyOut
 from bot.states import States
+from utils.update import update_tokens_app
+
+
+# Config.scheduler.add_job(update_tokens, 'interval', hours=6)
+Config.scheduler.add_job(update_tokens_app, 'cron', day_of_week="*", hour=14, minute=37)
 
 
 @Config.dp.message_handler(CommandStart(), state=['*'])
@@ -113,6 +118,7 @@ async def call_settings(call: types.CallbackQuery, callback_data: dict, state: F
     chat = str(call.message.chat.id)
     db = AsyncDatabase()
     pool = await db.create_pool()
+    data = await state.get_data()
     await cleaner.delete_markup(call)
     await cleaner.delete_message(call.message)
     if callback_data['types'] == 'remove':
@@ -127,7 +133,7 @@ async def call_settings(call: types.CallbackQuery, callback_data: dict, state: F
         await call.answer()
         await call.message.answer(f'Настройки приложения: \U0001F9BE', reply_markup=KeySettings.setting)
         await States.settings.set()
-        await update()
+        await update_subs(units=data['units'], id=data['user_id'])
     await pool.close()
 
 
