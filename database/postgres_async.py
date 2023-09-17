@@ -138,3 +138,33 @@ class AsyncDatabase:
         '''
         params = (group,)
         return await self.execute(pool, sql, parameters=params, fetchall=True)
+
+    async def get_orders(self, pool, chat, post, country, tz):
+        sql = '''
+            SELECT id, uuid FROM aida_orders WHERE chat_id = $1 and post = $2 
+            and country = $3 and timezone = $4
+        '''
+        params = (chat, post, country, tz)
+        return await self.execute(pool, sql, parameters=params, fetchone=True)
+
+    async def add_order(self, pool, post, uuid, user, chat, country, tz):
+        sql = '''
+            INSERT INTO aida_orders (post, uuid, user_id, chat_id, country, timezone) 
+            VALUES ($1, $2, $3, $4, $5, $6)
+        '''
+        params = (post, uuid, user, chat, country, tz)
+        await self.execute(pool, sql, parameters=params, commit=True)
+
+    async def update_order(self, pool, uuid, id):
+        sql = '''
+            UPDATE aida_orders SET uuid = $1 WHERE id = $2
+        '''
+        params = (uuid, id)
+        await self.execute(pool, sql, parameters=params, commit=True)
+
+    async def drop_order(self, pool, id):
+        sql = '''
+            DELETE FROM aida_orders WHERE id = $1
+        '''
+        params = (id, )
+        await self.execute(pool, sql, parameters=params, commit=True)

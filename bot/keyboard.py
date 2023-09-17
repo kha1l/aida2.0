@@ -35,6 +35,7 @@ class KeyTypes:
     db = AsyncDatabase()
     subscribe_func = []
     subs_dict = {}
+    func_name = {}
 
     def __init__(self, callback, subs):
         self.callback = callback
@@ -55,6 +56,7 @@ class KeyTypes:
         functions = await self.db.get_functions(pool, self.callback)
         for func in functions:
             if func['name'] in self.subscribe_func:
+                self.func_name[func['name']] = func['alias']
                 if func['name'] == 'stops':
                     button = InlineKeyboardButton(
                         text=func['alias'],
@@ -78,6 +80,7 @@ class KeyTypes:
         functions = await self.db.get_func(pool, 'stops')
         for func in functions:
             if func['name'] in self.subscribe_func:
+                self.func_name[func['name']] = func['alias']
                 button = InlineKeyboardButton(
                     text=func['alias'],
                     callback_data=self.callback_type.new(order=func['name'])
