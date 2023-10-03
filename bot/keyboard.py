@@ -19,6 +19,11 @@ class KeyStart:
             )],
         [
             InlineKeyboardButton(
+                text=f'\U0001F4D1 Оперативные данные',
+                callback_data=callback.new(type='operation')
+            )],
+        [
+            InlineKeyboardButton(
                 text=f'\U0001F6E0 Настройки',
                 callback_data='settings'
             )],
@@ -26,6 +31,28 @@ class KeyStart:
             InlineKeyboardButton(
                 text=f'\U00002716 Закрыть меню',
                 callback_data='exit'
+            )]
+    ])
+
+
+class KeyLive:
+    callback = CallbackData('data', 'type')
+
+    data_type = InlineKeyboardMarkup(row_width=1, inline_keyboard=[
+        [
+            InlineKeyboardButton(
+                text=f'\U0001F50A Текущие метрики',
+                callback_data=callback.new(type='metrics')
+            )],
+        [
+            InlineKeyboardButton(
+                text=f'\U0001F4D1 Выручка по сети',
+                callback_data=callback.new(type='revenue')
+            )],
+        [
+            InlineKeyboardButton(
+                text=f'\U0001F519 Назад',
+                callback_data='back'
             )]
     ])
 
@@ -194,11 +221,11 @@ class KeyStats:
                     text=f'\U0001F4A4 Ожидания курьеров',
                     callback_data=self.wait_callback.new(func_id=f'w.{order}.{uuid}.{tz}')
                 )],
-            # [
-            #     InlineKeyboardButton(
-            #         text=f'\U0000231A Опоздания/прогулы',
-            #         callback_data=self.wait_callback.new(func_id=f'l.{order}.{uuid}.{tz}')
-            #     )],
+            [
+                InlineKeyboardButton(
+                    text=f'\U0000231A Опоздания/прогулы',
+                    callback_data=self.wait_callback.new(func_id=f'l.{order}.{uuid}.{tz}')
+                )],
             [
                 InlineKeyboardButton(
                     text=f'\U0001F4D1 Сертификаты',
@@ -212,3 +239,15 @@ class KeyStats:
                     callback_data=self.wait_callback.new(func_id=f's.{order}.{uuid}.{tz}')
                 )]
         ])
+
+
+class KeyHide:
+    call_hide = CallbackData('s', 'func_id')
+    hide = InlineKeyboardMarkup(row_width=1, inline_keyboard=[
+        [
+            InlineKeyboardButton(
+                text=f'\U0001F504 Скрыть отчет',
+                callback_data=call_hide.new(func_id='hide')
+            )]
+    ])
+

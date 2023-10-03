@@ -7,14 +7,16 @@ from utils.cleaners import Clean
 from utils.stationary import add_stationary, Stationary
 from aiogram.dispatcher import FSMContext
 from authorization.users import Users, DataUser
-from bot.keyboard import KeyStart, KeyTypes, KeyRest, KeySettings, KeyOut
+from bot.keyboard import KeyStart, KeyTypes, KeyRest, KeySettings, KeyOut, KeyStats, KeyLive
 from bot.states import States
 from utils.update import update_tokens_app, update_subs
 from functions.birthday import send_birthday
 from functions.refusal import send_refusal
 from functions.metrics import send_metrics, command_metrics
+from functions.revenue import send_revenue, command_revenue
+from functions.couriers import get_orders, send_couriers
+from functions.stationary import send_stationary
 from functions.stops import stops_rest, stops_sector, stops_ings, stops_key_ings
-from aiogram.dispatcher.filters import Command
 from datetime import datetime
 
 
@@ -23,6 +25,9 @@ from datetime import datetime
 Config.scheduler.add_job(update_tokens_app, 'cron', day_of_week="*", hour=17, minute=32)
 Config.scheduler.add_job(send_birthday, 'cron', day_of_week="*", hour='0-13/1', minute=15)
 Config.scheduler.add_job(send_metrics, 'cron', day_of_week="*", hour='0-23', minute=48)
+Config.scheduler.add_job(send_couriers, 'cron', day_of_week="*", hour='0-23', minute=0)
+Config.scheduler.add_job(send_stationary, 'cron', day_of_week="*", hour='0-23', minute=0)
+Config.scheduler.add_job(send_revenue, 'cron', day_of_week="*", hour='0-23', minute=30)
 Config.scheduler.add_job(send_refusal, 'cron', day_of_week="*", hour='0-23', minute=7)
 Config.scheduler.add_job(stops_key_ings, 'interval', minutes=10, start_date=datetime(2023, 9, 17, 20, 34, 0))
 Config.scheduler.add_job(stops_ings, 'interval', minutes=10, start_date=datetime(2023, 9, 17, 20, 37, 0))
@@ -111,16 +116,6 @@ async def start_func(message: types.Message, state: FSMContext):
                                  f'днях рождения, отказах, ключевых метриках и отчетов по курьерам\n'
                                  f'Авторизуйтесь на странице приложения в маркетплейсе\n'
                                  f'https://marketplace.dodois.io/apps/11ECF3AAF97D059CB9706F21406EBD44')
-    await pool.close()
-
-
-@Config.dp.message_handler(Command(commands=["metrics"]), state=['*'])
-async def cmd_metrics(message: types.Message):
-    db = AsyncDatabase()
-    pool = await db.create_pool()
-    orders = await db.select_orders_metrics(pool, 'metrics', str(message.chat.id))
-    for order in orders:
-        await command_metrics(order, db, pool)
     await pool.close()
 
 
@@ -213,28 +208,65 @@ async def out_subs(call: types.CallbackQuery, callback_data: dict, state: FSMCon
     await pool.close()
 
 
+@Config.dp.callback_query_handler(KeyStats.wait_callback.filter())
+async def statistics(call: types.CallbackQuery, callback_data: dict):
+    await call.answer('Подождите, отчет собирается')
+    dt = call.message.date
+    post = callback_data.get('func_id')
+    user = str(call.from_user.id)
+    chat = str(call.message.chat.id)
+    await get_orders(dt, post, chat, user)
+
+
+@Config.dp.callback_query_handler(KeyLive.callback.filter(), state=States.command)
+async def live_functions(call: types.CallbackQuery, callback_data: dict):
+    db = AsyncDatabase()
+    pool = await db.create_pool()
+    callback = callback_data.get('type')
+    cleaner = Clean()
+    await cleaner.delete_message(call.message)
+    if callback == 'metrics':
+        orders = await db.select_orders_metrics(pool, 'metrics', str(call.from_user.id))
+        for order in orders:
+            await command_metrics(order, db, pool)
+        await call.message.answer(f'Выбери интересующее действие:', reply_markup=KeyLive.data_type)
+        await States.command.set()
+    else:
+        orders = await db.select_orders_metrics(pool, 'revenue', str(call.from_user.id))
+        for order in orders:
+            await command_revenue(order, db, pool)
+        await call.message.answer(f'Выбери интересующее действие:', reply_markup=KeyLive.data_type)
+        await States.command.set()
+    await pool.close()
+
+
 @Config.dp.callback_query_handler(KeyStart.callback.filter(), state=States.types)
 async def subscribe(call: types.CallbackQuery, callback_data: dict, state: FSMContext):
     cleaner = Clean()
     await cleaner.delete_message(call.message)
-    subs = {}
-    data = await state.get_data()
-    for item in data["units"]:
-        sub = item['subs']
-        uuid = item['uuid']
-        if sub in subs:
-            subs[sub].append(uuid)
-        else:
-            subs[sub] = [uuid]
-    dict_name = {}
-    for unit in data['units']:
-        dict_name[unit['uuid']] = unit['name']
-    key = KeyTypes(callback_data['type'], subs)
-    state_now = await state.get_state()
-    await key.set_key()
-    await state.update_data(name=dict_name, subs=subs, key=key, types=callback_data['type'], stc=state_now)
-    await call.message.answer(f'Выбери подписку:', reply_markup=key.orders)
-    await States.rest.set()
+    callback = callback_data['type']
+    if callback != 'operation':
+        subs = {}
+        data = await state.get_data()
+        for item in data["units"]:
+            sub = item['subs']
+            uuid = item['uuid']
+            if sub in subs:
+                subs[sub].append(uuid)
+            else:
+                subs[sub] = [uuid]
+        dict_name = {}
+        for unit in data['units']:
+            dict_name[unit['uuid']] = unit['name']
+        key = KeyTypes(callback_data['type'], subs)
+        state_now = await state.get_state()
+        await key.set_key()
+        await state.update_data(name=dict_name, subs=subs, key=key, types=callback, stc=state_now)
+        await call.message.answer(f'Выбери подписку:', reply_markup=key.orders)
+        await States.rest.set()
+    else:
+        await call.message.answer(f'Выбери интересующее действие:', reply_markup=KeyLive.data_type)
+        await States.command.set()
 
 
 @Config.dp.callback_query_handler(text='stops', state=States.rest)

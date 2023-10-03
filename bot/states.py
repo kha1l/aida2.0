@@ -8,3 +8,4 @@ class States(StatesGroup):
     pizza = State()
     settings = State()
     out_call = State()
+    command = State()
