@@ -60,14 +60,14 @@ async def send_stationary():
                         avg_meat = timedelta(seconds=round(time_rest / count_rest, 0))
                     except ZeroDivisionError:
                         avg_meat = timedelta(0)
-                    message = f'\U0001F307 РљСЂР°С‚РєРёР№ РѕС‚С‡РµС‚ РїРѕ СЂРµСЃС‚РѕСЂР°РЅСѓ Р·Р° {datetime.strftime(created_after, "%d.%m")}\n\n' \
+                    message = f'\U0001F307 Краткий отчет по ресторану за {datetime.strftime(created_after, "%d.%m")}\n\n' \
                               f'\U0001F3C3 <b>{rest_id["name"]}</b>\n' \
-                              f'Р’С‹СЂСѓС‡РєР°: {revenue_rest}\n' \
-                              f'Р—Р°РєР°Р·С‹: {orders_rest}\n' \
-                              f'РЎСЂРµРґРЅРµРµ РІСЂРµРјСЏ РїСЂРёРіРѕС‚РѕРІР»РµРЅРёСЏ: {avg_meat}\n' \
-                              f'РћРїРѕР·РґР°РЅРёСЏ: {count_later}\n\n' \
-                              f'Р—Р°РєР°Р·РѕРІ С‡РµСЂРµР· РїСЂРёР»РѕР¶РµРЅРёРµ: {mobile_rest} ({perc_mobile}%)\n' \
-                              f'Р—Р°РєР°Р·РѕРІ РЅР° РїРѕРґРЅРѕСЃРµ: {orders_dine} ({perc_dine}%)\n\n'
+                              f'Выручка: {revenue_rest}\n' \
+                              f'Заказы: {orders_rest}\n' \
+                              f'Среднее время приготовления: {avg_meat}\n' \
+                              f'Опоздания: {count_later}\n\n' \
+                              f'Заказов через приложение: {mobile_rest} ({perc_mobile}%)\n' \
+                              f'Заказов на подносе: {orders_dine} ({perc_dine}%)\n\n'
                     await sending_stationary(order["chat_id"], message, order["country"], unit, order['timezone'],
                                              logger)
                 except TypeError:

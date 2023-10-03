@@ -3,11 +3,12 @@ from utils.connection import post_api
 from utils.sending import sending_function
 from datetime import datetime, timedelta
 
+
 async def order_later_rest(data, access, dt_start, dt_end, chat):
     logger = Log('LATER_REST')
     dict_source = {
-        'CallCenter': 'РљРѕР»Р»-С†РµРЅС‚СЂ', 'Website': 'Р’СЌР±-СЃР°Р№С‚',
-        'Dine-in': 'Р РµСЃС‚РѕСЂР°РЅ', 'MobileApp': 'РњРѕР±РёР»СЊРЅРѕРµ РїСЂРёР»РѕР¶РµРЅРёРµ'
+        'CallCenter': 'Колл-центр', 'Website': 'Вэб-сайт',
+        'Dine-in': 'Ресторан', 'MobileApp': 'Мобильное приложение'
     }
     handover = await post_api(f'https://api.dodois.io/dodopizza/{data[1]}/production/orders-handover-time',
                               access, units=data[2], _from=dt_start, to=dt_end)
@@ -15,7 +16,7 @@ async def order_later_rest(data, access, dt_start, dt_end, chat):
     dt_for_message = datetime.strptime(dt, '%Y-%m-%d')
     dt_for_message = datetime.strftime(dt_for_message, '%d.%m')
     try:
-        message = f'\U000023F1 <b>РћРїРѕР·РґР°РЅРёСЏ РІ СЂРµСЃС‚РѕСЂР°РЅ Р·Р° {dt_for_message}</b>\n\n'
+        message = f'\U000023F1 <b>Опоздания в ресторан за  {dt_for_message}</b>\n\n'
         rest = ''
         for over in handover['ordersHandoverTime']:
             if over['salesChannel'] == 'Dine-in':
@@ -30,26 +31,26 @@ async def order_later_rest(data, access, dt_start, dt_end, chat):
                 meet = over['trackingPendingTime'] + over['cookingTime']
                 if prod == 0:
                     if meet > 300:
-                        message += f'РќРѕРјРµСЂ Р·Р°РєР°Р·Р°: {number}\n' \
-                                   f'Р’СЂРµРјСЏ Р·Р°РєР°Р·Р°: {time_order}\n' \
-                                   f'Р’СЂРµРјСЏ РЅР° С‚СЂРµРєРёРЅРіРµ: {track}\n' \
-                                   f'Р’СЂРµРјСЏ РїСЂРёРіРѕС‚РѕРІР»РµРЅРёСЏ: {cooking}\n' \
-                                   f'РСЃС‚РѕС‡РЅРёРє Р·Р°РєР°Р·Р°: {source}\n\n'
+                        message += f'Номер заказа: {number}\n' \
+                                   f'Время заказа: {time_order}\n' \
+                                   f'Время на трекинге: {track}\n' \
+                                   f'Время приготовления: {cooking}\n' \
+                                   f'Источник заказа: {source}\n\n'
                 if 0 < prod < 4:
                     if meet > 900:
-                        message += f'РќРѕРјРµСЂ Р·Р°РєР°Р·Р°: {number}\n' \
-                                   f'Р’СЂРµРјСЏ Р·Р°РєР°Р·Р°: {time_order}\n' \
-                                   f'Р’СЂРµРјСЏ РЅР° С‚СЂРµРєРёРЅРіРµ: {track}\n' \
-                                   f'Р’СЂРµРјСЏ РїСЂРёРіРѕС‚РѕРІР»РµРЅРёСЏ: {cooking}\n' \
-                                   f'РСЃС‚РѕС‡РЅРёРє Р·Р°РєР°Р·Р°: {source}\n\n'
+                        message += f'Номер заказа: {number}\n' \
+                                   f'Время заказа: {time_order}\n' \
+                                   f'Время на трекинге: {track}\n' \
+                                   f'Время приготовления: {cooking}\n' \
+                                   f'Источник заказа: {source}\n\n'
                 if prod >= 4:
                     if meet > 1500:
-                        message += f'РќРѕРјРµСЂ Р·Р°РєР°Р·Р°: {number}\n' \
-                                   f'Р’СЂРµРјСЏ Р·Р°РєР°Р·Р°: {time_order}\n' \
-                                   f'Р’СЂРµРјСЏ РЅР° С‚СЂРµРєРёРЅРіРµ: {track}\n' \
-                                   f'Р’СЂРµРјСЏ РїСЂРёРіРѕС‚РѕРІР»РµРЅРёСЏ: {cooking}\n' \
-                                   f'РСЃС‚РѕС‡РЅРёРє Р·Р°РєР°Р·Р°: {source}\n\n'
-        message += f'\n\U0001F4F2 <b>РћС‚С‡РµС‚ РѕРїРѕР·РґР°РЅРёР№ РІ СЂРµСЃС‚РѕСЂР°РЅ СЃРѕСЃС‚Р°РІР»РµРЅ РїРѕ РїРёС†С†РµСЂРёРё {rest}</b>'
+                        message += f'Номер заказа: {number}\n' \
+                                   f'Время заказа: {time_order}\n' \
+                                   f'Время на трекинге: {track}\n' \
+                                   f'Время приготовления: {cooking}\n' \
+                                   f'Источник заказа: {source}\n\n'
+        message += f'\n\U0001F4F2 <b>Отчет опозданий в ресторан составлен по пиццерии {rest}</b>'
         await sending_function(message, chat, logger)
     except TypeError:
         logger.error(f'Type ERROR later - {handover}')

@@ -16,6 +16,7 @@ from functions.metrics import send_metrics, command_metrics
 from functions.revenue import send_revenue, command_revenue
 from functions.couriers import get_orders, send_couriers
 from functions.stationary import send_stationary
+from functions.staff import send_staff
 from functions.stops import stops_rest, stops_sector, stops_ings, stops_key_ings
 from datetime import datetime
 
@@ -26,6 +27,7 @@ Config.scheduler.add_job(update_tokens_app, 'cron', day_of_week="*", hour=17, mi
 Config.scheduler.add_job(send_birthday, 'cron', day_of_week="*", hour='0-13/1', minute=15)
 Config.scheduler.add_job(send_metrics, 'cron', day_of_week="*", hour='0-23', minute=48)
 Config.scheduler.add_job(send_couriers, 'cron', day_of_week="*", hour='0-23', minute=0)
+Config.scheduler.add_job(send_staff, 'cron', day_of_week="*", hour='0-23', minute=30)
 Config.scheduler.add_job(send_stationary, 'cron', day_of_week="*", hour='0-23', minute=0)
 Config.scheduler.add_job(send_revenue, 'cron', day_of_week="*", hour='0-23', minute=30)
 Config.scheduler.add_job(send_refusal, 'cron', day_of_week="*", hour='0-23', minute=7)
@@ -226,12 +228,14 @@ async def live_functions(call: types.CallbackQuery, callback_data: dict):
     cleaner = Clean()
     await cleaner.delete_message(call.message)
     if callback == 'metrics':
+        await call.answer('Подождите, отчет собирается')
         orders = await db.select_orders_metrics(pool, 'metrics', str(call.from_user.id))
         for order in orders:
             await command_metrics(order, db, pool)
         await call.message.answer(f'Выбери интересующее действие:', reply_markup=KeyLive.data_type)
         await States.command.set()
     else:
+        await call.answer('Подождите, отчет собирается')
         orders = await db.select_orders_metrics(pool, 'revenue', str(call.from_user.id))
         for order in orders:
             await command_revenue(order, db, pool)

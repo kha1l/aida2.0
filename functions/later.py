@@ -8,9 +8,9 @@ async def change_time(minute):
     if minute >= 60:
         h = minute // 60
         m = minute % 60
-        tm = f'{h}С‡. {m}Рј.'
+        tm = f'{h}ч. {m}м.'
     else:
-        tm = f'{minute} Рј.'
+        tm = f'{minute} м.'
     return tm
 
 
@@ -26,7 +26,7 @@ async def order_later(data, access, dt_start, dt_end, chat):
     dt_for_message = datetime.strptime(dt, '%Y-%m-%d')
     dt_for_message = datetime.strftime(dt_for_message, '%d.%m')
     try:
-        message = f'\U0000203C <b>РћРїРѕР·РґР°РЅРёСЏ/РЅРµРІС‹С…РѕРґС‹ Р·Р° {dt_for_message}</b>\n\n'
+        message = f'\U0000203C <b>Опоздания/невыходы за  {dt_for_message}</b>\n\n'
         rest = ''
         schedule_dict = {}
         for sch in schedule['schedules']:
@@ -49,10 +49,10 @@ async def order_later(data, access, dt_start, dt_end, chat):
                         name = f"{courier['lastName']} {courier['firstName']}"
                         sex = courier['sex']
                         if sex == 'Male':
-                            sex_word = 'РѕРїРѕР·РґР°Р»'
+                            sex_word = 'опоздал'
                         else:
-                            sex_word = 'РѕРїРѕР·РґР°Р»Р°'
-                        message += f'\U000023F0 {name} {sex_word} РЅР° {tm}\n'
+                            sex_word = 'опоздала'
+                        message += f'\U000023F0 {name} {sex_word} на {tm}\n'
 
                 if end_shift < end_sch:
                     delta_end = (end_sch - end_shift).seconds / 60
@@ -63,10 +63,10 @@ async def order_later(data, access, dt_start, dt_end, chat):
                         name = f"{courier['lastName']} {courier['firstName']}"
                         sex = courier['sex']
                         if sex == 'Male':
-                            sex_word = 'СѓС€РµР»'
+                            sex_word = 'ушел'
                         else:
-                            sex_word = 'СѓС€Р»Р°'
-                        message += f'\U000023F3 {name} {sex_word} СЂР°РЅСЊС€Рµ РЅР° {tm}\n'
+                            sex_word = 'ушла'
+                        message += f'\U000023F3 {name} {sex_word} раньше на {tm}\n'
                 try:
                     del schedule_dict[shift_id]
                 except KeyError:
@@ -77,21 +77,21 @@ async def order_later(data, access, dt_start, dt_end, chat):
                 name = f"{courier['lastName']} {courier['firstName']}"
                 sex = courier['sex']
                 if sex == 'Male':
-                    sex_word = 'РІС‹С€РµР»'
+                    sex_word = 'вышел'
                 else:
-                    sex_word = 'РІС‹С€Р»Р°'
-                message += f'\U00002753 {name} {sex_word} РЅР° СЂР°Р±РѕС‚Сѓ РЅРµ РІ СЃРІРѕСЋ СЃРјРµРЅСѓ\n'
+                    sex_word = 'вышла'
+                message += f'\U00002753 {name} {sex_word} на работу не в свою смену\n'
         for key in schedule_dict:
             courier = await post_api(f'https://api.dodois.io/dodopizza/{data[1]}/staff/'
                                      f'members/{key}', access)
             name = f"{courier['lastName']} {courier['firstName']}"
             sex = courier['sex']
             if sex == 'Male':
-                sex_word = 'РІС‹С€РµР»'
+                sex_word = 'вышел'
             else:
-                sex_word = 'РІС‹С€Р»Р°'
-            message += f'\U0001F6A8 {name} РЅРµ {sex_word} РЅР° СЂР°Р±РѕС‚Сѓ\n'
-        message += f'\n\U0001F4F2 <b>РћС‚С‡РµС‚ РѕРїРѕР·РґР°РЅРёР№ СЃРѕСЃС‚Р°РІР»РµРЅ РїРѕ РїРёС†С†РµСЂРёРё {rest}</b>'
+                sex_word = 'вышла'
+            message += f'\U0001F6A8 {name} не {sex_word} на работу\n'
+        message += f'\n\U0001F4F2 <b>Отчет опозданий составлен по пиццерии {rest}</b>'
         await sending_function(message, chat, logger)
     except TypeError:
         logger.error(f'Type ERROR later - {schedule}')

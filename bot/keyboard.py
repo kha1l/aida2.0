@@ -19,7 +19,7 @@ class KeyStart:
             )],
         [
             InlineKeyboardButton(
-                text=f'\U0001F4D1 Оперативные данные',
+                text=f'\U0001F4AC Оперативные данные',
                 callback_data=callback.new(type='operation')
             )],
         [
@@ -250,4 +250,3 @@ class KeyHide:
                 callback_data=call_hide.new(func_id='hide')
             )]
     ])
-

@@ -74,22 +74,39 @@ async def stops_sector():
                 for sc in channel['stopSalesBySectors']:
                     start_date = sc['startedAt']
                     try:
-                        start_date = datetime.strptime(start_date, '%Y-%m-%dT%H:%M:%S')
+                        try:
+                            start_date = datetime.strptime(start_date, '%Y-%m-%dT%H:%M:%S')
+                        except Exception:
+                            try:
+                                start_date = datetime.strptime(start_date, '%Y-%m-%d %H:%M:%S')
+                            except Exception:
+                                start_date = datetime.strptime(start_date, '%Y-%m-%d')
                         if start_date > created_after:
                             tm = sc['startedAt'].split(' ')
                             rest = sc['unitName']
                             sector = sc['sectorName']
-                            message = f'\U0001F534 Остановка сектора\n\n' \
-                                      f'<b>{sector} в {rest}</b>\n' \
-                                      f'Время остановки: {tm[1]}\n'
+                            try:
+                                message = f'\U0001F534 Остановка сектора\n\n' \
+                                          f'<b>{sector} в {rest}</b>\n' \
+                                          f'Время остановки:: {tm[1]}\n'
+                            except IndexError:
+                                message = f'\U0001F7E2 Остановка сектора\n\n' \
+                                          f'<b>{sector} в {rest}</b>\n' \
+                                          f'Время остановки:: {tm[0]}\n'
                             await sending(order["chat_id"], message, logger)
                         if sc['endedAt'] is not None and sc['endedAt'] != '':
                             tm = sc['endedAt'].split('T')
                             rest = sc['unitName']
                             sector = sc['sectorName']
-                            message = f'\U0001F7E2 Возобновление сектора\n\n' \
-                                      f'<b>{sector} в {rest}</b>\n' \
-                                      f'Время возобновления: {tm[1]}\n'
+                            try:
+                                message = f'\U0001F7E2 Возобновление сектора\n\n' \
+                                          f'<b>{sector} в {rest}</b>\n' \
+                                          f'Время возобновления: {tm[1]}\n'
+                            except IndexError:
+                                message = f'\U0001F7E2 Возобновление сектора\n\n' \
+                                          f'<b>{sector} в {rest}</b>\n' \
+                                          f'Время возобновления: {tm[0]}\n'
+
                             await sending(order["chat_id"], message, logger)
                     except ValueError:
                         pass
