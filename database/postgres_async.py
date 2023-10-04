@@ -226,7 +226,7 @@ class AsyncDatabase:
         sql = '''
             SELECT aida_tokens.access
             FROM aida_tokens
-            INNER JOIN aida_users ON tokens.user_id = aida_users.id
+            INNER JOIN aida_users ON aida_tokens.user_id = aida_users.id
             WHERE aida_users.user_id = $1;
         '''
         params = (user, )

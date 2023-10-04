@@ -7,7 +7,7 @@ from utils.cleaners import Clean
 from utils.stationary import add_stationary, Stationary
 from aiogram.dispatcher import FSMContext
 from authorization.users import Users, DataUser
-from bot.keyboard import KeyStart, KeyTypes, KeyRest, KeySettings, KeyOut, KeyStats, KeyLive
+from bot.keyboard import KeyStart, KeyTypes, KeyRest, KeySettings, KeyOut, KeyStats, KeyLive, KeyHide
 from bot.states import States
 from utils.update import update_tokens_app, update_subs
 from functions.birthday import send_birthday
@@ -17,24 +17,25 @@ from functions.revenue import send_revenue, command_revenue
 from functions.couriers import get_orders, send_couriers
 from functions.stationary import send_stationary
 from functions.staff import send_staff
+from functions.tickets import send_tickets
 from functions.stops import stops_rest, stops_sector, stops_ings, stops_key_ings
 from datetime import datetime
 
 
-# Config.scheduler.add_job(update_tokens, 'interval', hours=6)
 # Config.scheduler.add_job(update_subs_day, 'cron', day_of_week='*', hour=17, minute=0)
-Config.scheduler.add_job(update_tokens_app, 'cron', day_of_week="*", hour=17, minute=32)
-Config.scheduler.add_job(send_birthday, 'cron', day_of_week="*", hour='0-13/1', minute=15)
-Config.scheduler.add_job(send_metrics, 'cron', day_of_week="*", hour='0-23', minute=48)
-Config.scheduler.add_job(send_couriers, 'cron', day_of_week="*", hour='0-23', minute=0)
-Config.scheduler.add_job(send_staff, 'cron', day_of_week="*", hour='0-23', minute=30)
-Config.scheduler.add_job(send_stationary, 'cron', day_of_week="*", hour='0-23', minute=0)
-Config.scheduler.add_job(send_revenue, 'cron', day_of_week="*", hour='0-23', minute=30)
-Config.scheduler.add_job(send_refusal, 'cron', day_of_week="*", hour='0-23', minute=7)
-Config.scheduler.add_job(stops_key_ings, 'interval', minutes=10, start_date=datetime(2023, 9, 17, 20, 34, 0))
-Config.scheduler.add_job(stops_ings, 'interval', minutes=10, start_date=datetime(2023, 9, 17, 20, 37, 0))
-Config.scheduler.add_job(stops_rest, 'interval', minutes=10, start_date=datetime(2023, 9, 17, 20, 40, 0))
-Config.scheduler.add_job(stops_sector, 'interval', minutes=10, start_date=datetime(2023, 9, 17, 20, 43, 0))
+# Config.scheduler.add_job(update_tokens_app, 'cron', day_of_week="*", hour=11, minute=4)
+# Config.scheduler.add_job(send_birthday, 'cron', day_of_week="*", hour='0-13/1', minute=20)
+# Config.scheduler.add_job(send_metrics, 'cron', day_of_week="*", hour='0-23', minute=0)
+# Config.scheduler.add_job(send_couriers, 'cron', day_of_week="*", hour='0-23', minute=10)
+Config.scheduler.add_job(send_staff, 'cron', day_of_week="*", hour='0-23', minute=47)
+# Config.scheduler.add_job(send_stationary, 'cron', day_of_week="*", hour='0-23', minute=40)
+# Config.scheduler.add_job(send_revenue, 'cron', day_of_week="*", hour='0-23', minute=30)
+# Config.scheduler.add_job(send_refusal, 'cron', day_of_week="*", hour='0-23', minute=15)
+# Config.scheduler.add_job(stops_key_ings, 'interval', minutes=10, start_date=datetime(2023, 10, 4, 11, 4, 0))
+# Config.scheduler.add_job(stops_ings, 'interval', minutes=10, start_date=datetime(2023, 10, 4, 11, 7, 0))
+# Config.scheduler.add_job(stops_rest, 'interval', minutes=10, start_date=datetime(2023, 10, 4, 11, 10, 0))
+# Config.scheduler.add_job(stops_sector, 'interval', minutes=10, start_date=datetime(2023, 10, 4, 11, 13, 0))
+Config.scheduler.add_job(send_tickets, 'interval', minutes=10, start_date=datetime(2023, 10, 4, 16, 6, 0))
 
 
 @Config.dp.message_handler(CommandStart(), state=['*'])
@@ -70,8 +71,8 @@ async def start_func(message: types.Message, state: FSMContext):
             await state.update_data(units=sorted_units, user_id=record['id'])
             await cleaner.delete_message(mess)
             await message.answer(f'Привет, {message.from_user.full_name}! \n\n'
-                                 f'Я - Aida. Присылаю мгновенные уведомления о стопах, тикетах, '
-                                 f'днях рождения, отказах, ключевых метриках и отчетов по курьерам',
+                                 f'Я - Aida. Помогая удаленно управлять рестораном или сетью ресторанов '
+                                 f'Dodo Brands и принимать правильные управленческие решения',
                                  reply_markup=KeyStart.type_order)
             await States.types.set()
 
@@ -93,8 +94,8 @@ async def start_func(message: types.Message, state: FSMContext):
             await state.update_data(units=sorted_units, user_id=account['id'])
             await cleaner.delete_message(mess)
             await message.answer(f'Привет, {message.from_user.full_name}! \n\n'
-                                 f'Я - Aida. Присылаю мгновенные уведомления о стопах, тикетах, '
-                                 f'днях рождения, отказах, ключевых метриках и отчетов по курьерам',
+                                 f'Я - Aida. Помогая удаленно управлять рестораном или сетью ресторанов '
+                                 f'Dodo Brands и принимать правильные управленческие решения',
                                  reply_markup=KeyStart.type_order)
             await States.types.set()
     else:
@@ -107,15 +108,15 @@ async def start_func(message: types.Message, state: FSMContext):
             sorted_units = sorted(access_units, key=lambda x: x["name"])
             await state.update_data(units=sorted_units, user_id=account['id'])
             await message.answer(f'Привет, {message.from_user.full_name}! \n\n'
-                                 f'Я - Aida. Присылаю мгновенные уведомления о стопах, тикетах, '
-                                 f'днях рождения, отказах, ключевых метриках и отчетов по курьерам',
+                                 f'Я - Aida. Помогая удаленно управлять рестораном или сетью ресторанов'
+                                 f'Dodo Brands и принимать правильные управленческие решения',
                                  reply_markup=KeyStart.type_order)
             await States.types.set()
         else:
             await cleaner.delete_message(mess)
             await message.answer(f'Привет, {message.from_user.full_name}\n\n'
-                                 f'Я - Aida. Присылаю мгновенные уведомления о стопах, тикетах,'
-                                 f'днях рождения, отказах, ключевых метриках и отчетов по курьерам\n'
+                                 f'Я - Aida. Помогая удаленно управлять рестораном или сетью ресторанов '
+                                 f'Dodo Brands и принимать правильные управленческие решения\n'
                                  f'Авторизуйтесь на странице приложения в маркетплейсе\n'
                                  f'https://marketplace.dodois.io/apps/11ECF3AAF97D059CB9706F21406EBD44')
     await pool.close()
@@ -129,6 +130,13 @@ async def settings_work(call: types.CallbackQuery):
     await call.answer()
     await call.message.answer(f'Настройки приложения: \U0001F9BE', reply_markup=KeySettings.setting)
     await States.settings.set()
+
+
+@Config.dp.callback_query_handler(KeyHide.call_hide.filter())
+async def statistics(call: types.CallbackQuery):
+    cleaner = Clean()
+    await cleaner.modify_message(call.message)
+    await call.answer()
 
 
 @Config.dp.callback_query_handler(KeySettings.call_settings.filter(), state=States.settings)
@@ -152,25 +160,28 @@ async def call_settings(call: types.CallbackQuery, callback_data: dict, state: F
     else:
         await call.answer()
         mess = await call.message.answer(f'Идет сбор данных \U0001F4C0\nПодождите, пожалуйста')
-        add_units, upd_units = await update_subs(id=data['user_id'])
-        if add_units and upd_units:
-            await call.message.answer(f'Обновлены данные у следующих заведений: '
-                                      f'{", ".join(str(row) for row in upd_units)}\n\n'
-                                      f'Добавлены следующие заведения: {", ".join(str(row) for row in add_units)}')
-            await cleaner.delete_message(mess)
-        elif add_units:
-            await call.message.answer(f'Добавлены следующие заведения: {", ".join(str(row) for row in add_units)}')
-            await cleaner.delete_message(mess)
-        elif upd_units:
-            await call.message.answer(f'Обновлены данные у следующих заведений: '
-                                      f'{", ".join(str(row) for row in upd_units)}')
-            await cleaner.delete_message(mess)
-        else:
-            await call.message.answer(f'Изменения не найдены. Попробуйте позднее, возможно данные еще '
-                                      f'не успели обновиться.')
-            await cleaner.delete_message(mess)
-        await call.message.answer(f'Настройки приложения: \U0001F9BE', reply_markup=KeySettings.setting)
-        await States.settings.set()
+        try:
+            add_units, upd_units = await update_subs(id=data['user_id'])
+            if add_units and upd_units:
+                await call.message.answer(f'Обновлены данные у следующих заведений: '
+                                          f'{", ".join(str(row) for row in upd_units)}\n\n'
+                                          f'Добавлены следующие заведения: {", ".join(str(row) for row in add_units)}')
+                await cleaner.delete_message(mess)
+            elif add_units:
+                await call.message.answer(f'Добавлены следующие заведения: {", ".join(str(row) for row in add_units)}')
+                await cleaner.delete_message(mess)
+            elif upd_units:
+                await call.message.answer(f'Обновлены данные у следующих заведений: '
+                                          f'{", ".join(str(row) for row in upd_units)}')
+                await cleaner.delete_message(mess)
+            else:
+                await call.message.answer(f'Изменения не найдены. Попробуйте позднее, возможно данные еще '
+                                          f'не успели обновиться.')
+                await cleaner.delete_message(mess)
+            await call.message.answer(f'Настройки приложения: \U0001F9BE', reply_markup=KeySettings.setting)
+            await States.settings.set()
+        except KeyError:
+            logger.error(f'ERROR - {data}')
     await pool.close()
 
 

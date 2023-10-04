@@ -41,12 +41,12 @@ class KeyLive:
     data_type = InlineKeyboardMarkup(row_width=1, inline_keyboard=[
         [
             InlineKeyboardButton(
-                text=f'\U0001F50A Текущие метрики',
+                text=f'\U0001F4CA Текущие метрики',
                 callback_data=callback.new(type='metrics')
             )],
         [
             InlineKeyboardButton(
-                text=f'\U0001F4D1 Выручка по сети',
+                text=f'\U0001F4B9 Выручка по сети',
                 callback_data=callback.new(type='revenue')
             )],
         [

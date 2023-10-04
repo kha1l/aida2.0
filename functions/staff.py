@@ -9,76 +9,49 @@ async def work_staff(request, order, dt):
     logger = Log('STAFF')
     try:
         for member in request['members']:
-            dt_day = datetime.strptime(member['dateOfBirth'], '%Y-%m-%d').date()
-            hired = datetime.strptime(member['hiredOn'], '%Y-%m-%d').date()
-            user_id = member['userId']
-            delta_holiday = dt_day - dt
-            delta_hired = hired - dt
-            if delta_holiday == timedelta(days=1):
-                when = 'Завтра'
+            holiday_day = datetime.strptime(member['dateOfBirth'], '%Y-%m-%d').date() - timedelta(days=1)
+            hired_day = datetime.strptime(member['hiredOn'], '%Y-%m-%d').date() - timedelta(days=1)
+            holiday_week = holiday_day - timedelta(days=13)
+            hired_week = hired_day - timedelta(days=13)
+            if dt.day == holiday_day.day and dt.month == holiday_day.month:
+                when_holiday = '\U0000203C Завтра'
+                age = dt.year - holiday_day.year
+            elif dt.day == holiday_week.day and dt.month == holiday_week.month:
+                when_holiday = '\U00002755 Через 2 недели'
+                age = dt.year - holiday_week.year
             else:
-                when = 'Через 2 недели'
-            if delta_holiday == timedelta(days=14) or delta_holiday == timedelta(days=1):
-                age = dt.year - dt_day.year
+                when_holiday = ''
+                age = 1
+            if when_holiday:
                 if age % 5 == 0:
                     rest = member['unitName']
                     staff = member['positionName']
                     name = member['firstName']
                     lastname = member['lastName']
-                    message = f'\U0001F38A {when} юбилей в {rest}\n' \
-                              f'<b>{lastname} {name}</b> \U0001F381\n' \
+                    message = f'{when_holiday} юбилей в {rest}\n' \
+                              f'<b>{lastname} {name}</b> \U0001F490\n' \
                               f'{staff}, ' \
                               f'Возраст:  {age}\n'
                     await sending(order['chat_id'], message, logger)
-            if delta_hired == timedelta(days=1):
-                when = 'Завтра'
+            if dt.day == hired_day.day and dt.month == hired_day.month:
+                when_hired = '\U0000203C Завтра'
+                hire = dt.year - hired_day.year
+            elif dt.day == hired_week.day and dt.month == hired_week.month:
+                when_hired = '\U00002755 Через 2 недели'
+                hire = dt.year - hired_week.year
             else:
-                when = 'Через 2 недели'
-            if delta_hired == timedelta(days=14) or delta_hired == timedelta(days=1):
+                when_hired = ''
+                hire = 1
+            if when_hired:
                 rest = member['unitName']
                 staff = member['positionName']
                 name = member['firstName']
                 lastname = member['lastName']
-                hire = dt.year - dt_day.year
-                message = f'\U0001F38A {when} годовщина работы в {rest}\n' \
-                          f'<b>{lastname} {name}</b> \U0001F381\n' \
+                message = f'{when_hired} годовщина работы в {rest}\n' \
+                          f'<b>{lastname} {name}</b> \U0001F33B\n' \
                           f'{staff}, ' \
                           f'Стаж:  {hire}\n'
                 await sending(order['chat_id'], message, logger)
-            person = await post_api(f'https://api.dodois.io/dodopizza/{order["country"]}/staff/members{user_id}',
-                                    order["access"])
-            if person['isHealthPermitAvailable']:
-                health = datetime.strptime(person['healthPermitExpiresOn'], '%Y-%m-%d').date()
-                health_val = datetime.strptime(person['healthPermitValidUntil'], '%Y-%m-%d').date()
-                delta_health = health - dt
-                delta_health_val = health_val - dt
-                if delta_health == timedelta(days=1):
-                    when = 'Завтра'
-                else:
-                    when = 'Через 2 недели'
-                if delta_health_val == timedelta(days=1):
-                    when_val = 'Завтра'
-                else:
-                    when_val = 'Через 2 недели'
-                if delta_health == timedelta(days=14) or delta_health == timedelta(days=1):
-                    rest = member['unitName']
-                    staff = member['positionName']
-                    name = member['firstName']
-                    lastname = member['lastName']
-                    message = f'\U0001F38A {when} заканчивается действие медициского осмотра в ' \
-                              f'медицинской книжке в {rest}\n' \
-                              f'<b>{lastname} {name}</b> \U0001F381\n' \
-                              f'{staff}'
-                    await sending(order['chat_id'], message, logger)
-                if delta_health_val == timedelta(days=14) or delta_health_val == timedelta(days=1):
-                    rest = member['unitName']
-                    staff = member['positionName']
-                    name = member['firstName']
-                    lastname = member['lastName']
-                    message = f'\U0001F38A {when_val} заканчивается действие медицинской книжки в {rest}\n' \
-                              f'<b>{lastname} {name}</b> \U0001F381\n' \
-                              f'{staff}'
-                    await sending(order['chat_id'], message, logger)
     except TypeError:
         logger.error(f'Type ERROR staff')
     except KeyError:
@@ -92,7 +65,7 @@ async def send_staff():
     orders = await db.select_orders(pool, 'staff')
     for order in orders:
         hour = datetime.now().hour - 3 + order['timezone']
-        if hour == 9:
+        if hour == 15:
             dt = datetime.now().date()
             for i in range(0, len(order['uuid']), 29):
                 batch = order['uuid'][i:i + 29]
@@ -104,7 +77,7 @@ async def send_staff():
                     cnt = members['totalCount']
                     take = 100
                     while take < cnt:
-                        members = await post_api(f'https://api.dodois.io/dodopizza/{"country"}/staff/members',
+                        members = await post_api(f'https://api.dodois.io/dodopizza/{order["country"]}/staff/members',
                                                  order["access"], units=uuids, statuses='Active', take=100, skip=take)
                         take += 100
                         await work_staff(members, order, dt)

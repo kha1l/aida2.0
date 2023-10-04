@@ -20,7 +20,7 @@ async def send_couriers():
     dt_start = datetime.strftime(created_after, '%Y-%m-%dT%H:%M:%S')
     for order in orders:
         hour = datetime.now().hour - 3 + order['timezone']
-        if hour == 8:
+        if hour == 11:
             for i in range(0, len(order['uuid']), 29):
                 batch = order['uuid'][i:i + 29]
                 uuids = ','.join(batch)

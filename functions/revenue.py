@@ -45,7 +45,7 @@ async def command_revenue(order, db, pool):
     max_name_length = max(len(item[0]) for item in data)
     for item in data:
         name, value, percentage = item
-        message += "{:<{}} {} {}".format(name, max_name_length, value, percentage) + '\n'
+        message += "{:<{}} {} ({})".format(name, max_name_length, value, percentage) + '\n'
     await sending(order["chat_id"], message, logger)
 
 
@@ -53,7 +53,7 @@ async def send_revenue():
     db = AsyncDatabase()
     pool = await db.create_pool()
     orders = await db.select_orders(pool, 'revenue')
-    hours = [23, 16]
+    hours = [23, 12]
     for order in orders:
         hour = datetime.now().hour - 3 + order['timezone']
         if hour in hours:

@@ -1,36 +1,62 @@
-from database.psql import Database
-from bot.auth import set_date, pyrus_api
-from datetime import datetime, timedelta
+from database.postgres_async import AsyncDatabase
+from utils.connection import pyrus_auth, pyrus_api
+from datetime import datetime, timezone, timedelta
 from loggs.logger import Log
 from utils.sending import sending
+from configuration.conf import Config
 
 
 async def send_tickets():
-    db = Database()
+    cfg = Config()
+    db = AsyncDatabase()
+    pool = await db.create_pool()
     logger = Log('TICKETS')
-    orders = db.select_orders('tickets')
-    dt_start, dt_end, created_after = await set_date('UTC', minutes=10)
+    token = await pyrus_auth()
+    orders = await db.select_orders(pool, 'tickets')
+    dict_catalog = {}
+    dt = datetime.now(timezone.utc)
+    dt_start = datetime.strftime(dt - timedelta(minutes=10), '%Y-%m-%dT%H:%M:%S')
+    dt_end = datetime.strftime(dt, '%Y-%m-%dT%H:%M:%S')
+    for country in cfg.catalogs:
+        value = cfg.catalogs[country]
+        catalogs = await pyrus_api(f'https://api.pyrus.com/v4/catalogs/{value["CatalogId"]}',
+                                   token['access_token'])
+        try:
+            for catalog in catalogs['items']:
+                if country == 'by' or country == 'uk':
+                    dict_catalog[catalog['values'][1]] = catalog['item_id']
+                else:
+                    dict_catalog[catalog['values'][0]] = catalog['item_id']
+        except KeyError:
+            logger.error(f'ERROR for catalog in - {country}')
     for order in orders:
-        catalogs = ','.join(order[2])
+        data_catalog = []
+        form_id = cfg.catalogs[order['country']]
+        for uuid in order['uuid']:
+            data_catalog.append(str(dict_catalog[uuid.upper()]))
+        item_id = ','.join(data_catalog)
         data = {
             "field_ids": [1, 60, 57, 198, 13, 222, 37, 202, 196, 204, 203, 2, 261, 262, 134],
             "include_archived": "y",
             "created_after": dt_start + 'Z',
             "created_before": dt_end + 'Z',
-            "fld198": catalogs
+            "fld198": item_id
         }
-        pyrus = await pyrus_api('https://api.pyrus.com/v4/forms/522023/register', data)
+        pyrus = await pyrus_api(f'https://api.pyrus.com/v4/forms/{form_id["FormId"]}/register',
+                                token['access_token'], data)
+        print(pyrus)
         try:
             tasks = pyrus['tasks']
         except KeyError:
             tasks = []
         for task in tasks:
+            print(task)
             problem = []
             checker, comment, name = '', '', ''
             type_order, number_order, grade = '', 0, 0
-            dt, tm, tz = '', '', 0
+            dt, tm = '', ''
             id_task = task['id']
-            tickets = await pyrus_api(f'https://api.pyrus.com/v4/tasks/{id_task}')
+            tickets = await pyrus_api(f'https://api.pyrus.com/v4/tasks/{id_task}', token['access_token'])
             try:
                 ticket = tickets['task']
                 fields = ticket['fields']
@@ -42,13 +68,10 @@ async def send_tickets():
                     value = field['value']
                     try:
                         name = value['values'][1]
-                        tz = int(value['values'][17])
                     except IndexError:
                         name = ''
-                        tz = 0
                     except ValueError:
                         name = ''
-                        tz = 0
                 elif field['id'] == 284:
                     try:
                         number_order = field['value']
@@ -119,7 +142,8 @@ async def send_tickets():
                                     pass
             if checker or comment or problem:
                 try:
-                    time_tz = datetime.strptime(f'{dt} {tm}', '%Y-%m-%d %H:%M') + timedelta(hours=tz)
+                    time_tz = (datetime.strptime(f'{dt} {tm}', '%Y-%m-%d %H:%M') +
+                               timedelta(hours=order['timezone']))
                     dt_tz = datetime.strftime(time_tz, '%H:%M %d.%m.%Y')
                 except ValueError:
                     dt_tz = ''
@@ -139,3 +163,4 @@ async def send_tickets():
                 if dt_tz == '':
                     message = message.replace('Дата и время заказа: \n', '')
                 await sending(order[5], message, logger)
+    await pool.close()

@@ -2,6 +2,7 @@ from aiohttp.client_exceptions import ContentTypeError
 import aiohttp
 from configuration.conf import Settings, Config
 from loggs.logger import Log
+import asyncio
 
 
 class Connect:
@@ -60,6 +61,8 @@ class Connect:
 async def post_api(url, access, **kwargs) -> dict:
     data = {}
     logger = Log('API')
+    retry_limit = 5
+    retry_delay = 30
     for key, value in kwargs.items():
         if key == '_from':
             data['from'] = value
@@ -71,17 +74,22 @@ async def post_api(url, access, **kwargs) -> dict:
         "Authorization": f"Bearer {access}"
     }
     async with aiohttp.ClientSession() as session:
-        async with session.get(url, headers=headers, params=data) as response:
-            try:
-                if response.status == 200:
-                    response = await response.json()
-                    return response
-                else:
+        for i in range(retry_limit):
+            async with session.get(url, headers=headers, params=data) as response:
+                try:
+                    if response.status == 200:
+                        response = await response.json()
+                        return response
+                    elif response.status == 429:
+                        logger.info(f'RETRY post_api - {response}')
+                        await asyncio.sleep(retry_delay)
+                    else:
+                        logger.error(f'ERROR post_api - {response}')
+                        break
+                except ContentTypeError:
                     logger.error(f'ERROR post_api - {response}')
                     return {}
-            except ContentTypeError:
-                logger.error(f'ERROR post_api - {response}')
-                return {}
+        return {}
 
 
 async def public_api(url) -> dict:
@@ -92,3 +100,49 @@ async def public_api(url) -> dict:
                 return response
             except ContentTypeError:
                 return {}
+
+
+async def pyrus_auth():
+    cfg = Config()
+    url = 'https://api.pyrus.com/v4/auth'
+    headers = {
+        'Content-Type': 'application/json',
+        'user-agent': 'DodoVkus'
+    }
+    data = {
+        "login": cfg.pyrus,
+        "security_key": cfg.key
+    }
+    async with aiohttp.ClientSession() as session:
+        async with session.post(url, json=data, headers=headers) as response:
+            try:
+                response = await response.json()
+                return response
+            except ContentTypeError:
+                return {}
+
+async def pyrus_api(url, access, *args):
+    headers = {
+        "Authorization": f'Bearer {access}',
+        "Content-Type": "application/json",
+        "user-agent": 'DodoVkus'
+    }
+    print(url)
+    if args:
+        print(args[0])
+    print(access)
+    async with aiohttp.ClientSession() as session:
+        if args:
+            async with session.post(url, json=args[0], headers=headers) as response:
+                try:
+                    response = await response.json()
+                    return response
+                except ContentTypeError:
+                    return {}
+        else:
+            async with session.get(url, headers=headers) as response:
+                try:
+                    response = await response.json()
+                    return response
+                except ContentTypeError:
+                    return {}
