@@ -48,9 +48,9 @@ async def command_metrics(order, db, pool):
                                       f'/production/orders-handover-time',
                                       order["access"], units=uuids, _from=dt_start, to=dt_end)
             try:
-                for order in response['ordersHandoverTime']:
-                    if order['salesChannel'] == 'Dine-in':
-                        time_rest = order['trackingPendingTime'] + order['cookingTime']
+                for order_hand in response['ordersHandoverTime']:
+                    if order_hand['salesChannel'] == 'Dine-in':
+                        time_rest = order_hand['trackingPendingTime'] + order_hand['cookingTime']
                         if time_rest > 900:
                             count_stationary += 1
             except Exception as e:
