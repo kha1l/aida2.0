@@ -2,7 +2,7 @@ from database.postgres_async import AsyncDatabase
 from utils.connection import public_api
 from datetime import datetime
 from loggs.logger import Log
-from utils.sending import sending
+from utils.sending import Send
 
 
 async def change_revenue(today, week):
@@ -23,6 +23,7 @@ async def change_revenue(today, week):
 async def command_revenue(order, db, pool):
     logger = Log('revenue')
     dt = datetime.now()
+    send = Send(db=db)
     dt_for_message = datetime.strftime(dt, '%d.%m')
     total_today, total_week = 0, 0
     message = f'\U0001F4CA <b>Выручка по сети на {dt_for_message}:</b>\n'
@@ -46,7 +47,7 @@ async def command_revenue(order, db, pool):
     for item in data:
         name, value, percentage = item
         message += "{:<{}} {} ({})".format(name, max_name_length, value, percentage) + '\n'
-    await sending(order["chat_id"], message, logger)
+    await send.sending(order["chat_id"], message, logger, order['id'])
 
 
 async def send_revenue():

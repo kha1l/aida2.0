@@ -2,12 +2,13 @@ from database.postgres_async import AsyncDatabase
 from datetime import datetime, timedelta
 from utils.connection import post_api
 from loggs.logger import Log
-from utils.sending import sending
+from utils.sending import Send
 
 
 async def stops_rest():
     db = AsyncDatabase()
     pool = await db.create_pool()
+    send = Send(db=db)
     logger = Log('CHANNEL')
     ch_type = {
         'Takeaway': 'Самовывоз', 'Delivery': 'Доставка', 'Dine-in': 'Ресторан'
@@ -38,7 +39,7 @@ async def stops_rest():
                                   f'<b>{ch_type[cnl]} в {rest}</b>\n' \
                                   f'Причина: {reason}\n' \
                                   f'Время остановки: {tm[1]}\n'
-                        await sending(order["chat_id"], message, logger)
+                        await send.sending(order["chat_id"], message, logger, order['id'])
                     if ch['endedAt'] is not None:
                         tm = ch['endedAt'].split('T')
                         rest = ch['unitName']
@@ -46,7 +47,7 @@ async def stops_rest():
                         message = f'\U0001F7E2 Возобновление продаж\n\n' \
                                   f'<b>{ch_type[cnl]} в {rest}</b>\n' \
                                   f'Время возобновления: {tm[1]}\n'
-                        await sending(order["chat_id"], message, logger)
+                        await send.sending(order["chat_id"], message, logger, order['id'])
             except TypeError:
                 logger.error(f'Type ERROR stop_channel - {order["id"]}')
             except KeyError:
@@ -58,11 +59,12 @@ async def stops_sector():
     db = AsyncDatabase()
     pool = await db.create_pool()
     logger = Log('SECTOR')
+    send = Send(db=db)
     orders = await db.select_orders(pool, 'stops_sector')
     for order in orders:
-        created_before = datetime.now() - timedelta(minutes=180)
+        created_before = datetime.now() - timedelta(minutes=185)
         dt_end = datetime.strftime(created_before, '%Y-%m-%dT%H:%M:%S')
-        created_after = created_before - timedelta(minutes=10)
+        created_after = created_before - timedelta(minutes=5)
         dt_start = datetime.strftime(created_after, '%Y-%m-%dT%H:%M:%S')
         for i in range(0, len(order["uuid"]), 29):
             batch = order["uuid"][i:i + 29]
@@ -73,47 +75,32 @@ async def stops_sector():
             try:
                 for sc in channel['stopSalesBySectors']:
                     start_date = sc['startedAt']
-                    try:
-                        try:
-                            start_date = datetime.strptime(start_date, '%Y-%m-%dT%H:%M:%S')
-                        except Exception:
-                            try:
-                                start_date = datetime.strptime(start_date, '%Y-%m-%d %H:%M:%S')
-                            except Exception:
-                                start_date = datetime.strptime(start_date, '%Y-%m-%d')
-                        if start_date > created_after:
-                            tm = sc['startedAt'].split(' ')
-                            rest = sc['unitName']
-                            sector = sc['sectorName']
-                            try:
-                                message = f'\U0001F534 Остановка сектора\n\n' \
-                                          f'<b>{sector} в {rest}</b>\n' \
-                                          f'Время остановки:: {tm[1]}\n'
-                            except IndexError:
-                                message = f'\U0001F7E2 Остановка сектора\n\n' \
-                                          f'<b>{sector} в {rest}</b>\n' \
-                                          f'Время остановки:: {tm[0]}\n'
-                            await sending(order["chat_id"], message, logger)
-                        if sc['endedAt'] is not None and sc['endedAt'] != '':
-                            tm = sc['endedAt'].split('T')
-                            rest = sc['unitName']
-                            sector = sc['sectorName']
-                            try:
-                                message = f'\U0001F7E2 Возобновление сектора\n\n' \
-                                          f'<b>{sector} в {rest}</b>\n' \
-                                          f'Время возобновления: {tm[1]}\n'
-                            except IndexError:
-                                message = f'\U0001F7E2 Возобновление сектора\n\n' \
-                                          f'<b>{sector} в {rest}</b>\n' \
-                                          f'Время возобновления: {tm[0]}\n'
-
-                            await sending(order["chat_id"], message, logger)
-                    except ValueError:
-                        pass
-            except TypeError:
-                logger.error(f'Type ERROR stop_sector - {order["id"]}')
-            except KeyError:
-                logger.error(f'Key ERROR stop_sector - {order["id"]}')
+                    if start_date != '0001-01-01':
+                        start_date = datetime.strptime(start_date, '%Y-%m-%dT%H:%M:%S')
+                    else:
+                        start_date = datetime.strptime(start_date, '%Y-%m-%d')
+                    if start_date > created_after:
+                        dt_tm = datetime.strptime(sc['startedAt'], '%Y-%m-%dT%H:%M:%S')
+                        time_tm = dt_tm + timedelta(hours=order['timezone'])
+                        rest = sc['unitName']
+                        sector = sc['sectorName']
+                        message = f'\U0001F534 Остановка сектора\n\n' \
+                                  f'<b>{sector} в {rest}</b>\n' \
+                                  f'Время остановки: {time_tm.time()}\n'
+                        await send.sending(order["chat_id"], message, logger, order['id'])
+                    if sc['endedAt'] is not None and sc['endedAt'] != '':
+                        dt_tm = datetime.strptime(sc['endedAt'], '%Y-%m-%dT%H:%M:%S')
+                        time_tm = dt_tm + timedelta(hours=order['timezone'])
+                        rest = sc['unitName']
+                        sector = sc['sectorName']
+                        message = f'\U0001F7E2 Возобновление сектора\n\n' \
+                                  f'<b>{sector} в {rest}</b>\n' \
+                                  f'Время возобновления: {time_tm.time()}\n'
+                        await send.sending(order["chat_id"], message, logger, order['id'])
+            except TypeError as e:
+                logger.error(f'Type ERROR stop_sector - {order["id"]} - {e}')
+            except KeyError as e:
+                logger.error(f'Key ERROR stop_sector - {order["id"]} - {e}')
     await pool.close()
 
 
@@ -121,6 +108,7 @@ async def stops_ings():
     db = AsyncDatabase()
     pool = await db.create_pool()
     logger = Log('INGS')
+    send = Send(db=db)
     orders = await db.select_orders(pool, 'stops_ings')
     for order in orders:
         minutes = order['timezone'] * 60 - 180
@@ -147,7 +135,7 @@ async def stops_ings():
                                   f'<b>{stop_ing} в {rest}</b>\n' \
                                   f'Причина: {reason}\n' \
                                   f'Время остановки: {tm[1]}\n'
-                        await sending(order["chat_id"], message, logger)
+                        await send.sending(order["chat_id"], message, logger, order['id'])
                     if ing['endedAt'] is not None:
                         tm = ing['endedAt'].split('T')
                         rest = ing['unitName']
@@ -155,7 +143,7 @@ async def stops_ings():
                         message = f'\U0001F7E2 Возобновление продаж\n\n' \
                                   f'<b>{stop_ing} в {rest}</b>\n' \
                                   f'Время возобновления: {tm[1]}\n'
-                        await sending(order["chat_id"], message, logger)
+                        await send.sending(order["chat_id"], message, logger, order['id'])
             except TypeError:
                 logger.error(f'Type ERROR stop_ings - {order["id"]}')
             except KeyError:
@@ -181,6 +169,7 @@ async def stops_key_ings():
     db = AsyncDatabase()
     pool = await db.create_pool()
     logger = Log('INGS')
+    send = Send(db=db)
     orders = await db.select_orders(pool, 'ings')
     for order in orders:
         minutes = order['timezone'] * 60 - 180
@@ -208,7 +197,7 @@ async def stops_key_ings():
                                       f'<b>{stop_ing} в {rest}</b>\n' \
                                       f'Причина: {reason}\n' \
                                       f'Время остановки: {tm[1]}\n'
-                            await sending(order["chat_id"], message, logger)
+                            await send.sending(order["chat_id"], message, logger, order['id'])
             except TypeError:
                 logger.error(f'Type ERROR stop_ings - {order["id"]}')
             except KeyError:

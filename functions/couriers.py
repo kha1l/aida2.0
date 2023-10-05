@@ -2,7 +2,7 @@ from loggs.logger import Log
 from database.postgres_async import AsyncDatabase
 from datetime import datetime, timedelta
 from utils.connection import post_api
-from utils.sending import sending_couriers, sending
+from utils.sending import Send
 from functions.certificates import order_certs
 from functions.waiting import order_wait
 from functions.later import order_later
@@ -12,6 +12,7 @@ from functions.later_rest import order_later_rest
 async def send_couriers():
     logger = Log('COURIERS')
     db = AsyncDatabase()
+    send = Send(db=db)
     pool = await db.create_pool()
     orders = await db.select_orders(pool, 'couriers')
     created_before = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
@@ -114,8 +115,8 @@ async def send_couriers():
                                   f'Поездки с 2 заказами: {two} ({perc_two}%)\n' \
                                   f'Поездки с 3 и более: {three} ({perc_three}%)\n' \
                                   f'Загруженность курьеров: {workload}%\n\n'
-                        await sending_couriers(order["chat_id"], message, order["country"], uuid, order['timezone'],
-                                               logger)
+                        await send.sending_statistics(order["chat_id"], message, order["country"], uuid,
+                                                      order['timezone'], logger, 'courier', order['id'])
                 except TypeError:
                     logger.error(f'Type ERROR statistics - {statistics}')
                 except KeyError:
@@ -126,6 +127,7 @@ async def send_couriers():
 async def get_orders(dt, post, chat, user):
     logger = Log('COURIERS STATISTICS')
     db = AsyncDatabase()
+    send = Send(db=db)
     pool = await db.create_pool()
     access = await db.select_user(pool, user)
     dt_end = datetime.strftime(dt.replace(hour=0, minute=0, second=0, microsecond=0), '%Y-%m-%dT%H:%M:%S')
@@ -147,5 +149,5 @@ async def get_orders(dt, post, chat, user):
         message = f'\U000026D4 Вам отказано в доступе!\n' \
                   f'Ссылка на подключение:\n' \
                   f'https://marketplace.dodois.io/apps/11ECF3AAF97D059CB9706F21406EBD44'
-        await sending(chat, message, logger)
+        await send.sending(chat, message, logger, 0)
     await pool.close()

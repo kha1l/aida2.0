@@ -23,19 +23,19 @@ from datetime import datetime
 
 
 # Config.scheduler.add_job(update_subs_day, 'cron', day_of_week='*', hour=17, minute=0)
-# Config.scheduler.add_job(update_tokens_app, 'cron', day_of_week="*", hour=11, minute=4)
+Config.scheduler.add_job(update_tokens_app, 'cron', day_of_week="*", hour=11, minute=26)
 # Config.scheduler.add_job(send_birthday, 'cron', day_of_week="*", hour='0-13/1', minute=20)
 # Config.scheduler.add_job(send_metrics, 'cron', day_of_week="*", hour='0-23', minute=0)
 # Config.scheduler.add_job(send_couriers, 'cron', day_of_week="*", hour='0-23', minute=10)
-Config.scheduler.add_job(send_staff, 'cron', day_of_week="*", hour='0-23', minute=47)
+# Config.scheduler.add_job(send_staff, 'cron', day_of_week="*", hour='0-23', minute=47)
 # Config.scheduler.add_job(send_stationary, 'cron', day_of_week="*", hour='0-23', minute=40)
 # Config.scheduler.add_job(send_revenue, 'cron', day_of_week="*", hour='0-23', minute=30)
 # Config.scheduler.add_job(send_refusal, 'cron', day_of_week="*", hour='0-23', minute=15)
 # Config.scheduler.add_job(stops_key_ings, 'interval', minutes=10, start_date=datetime(2023, 10, 4, 11, 4, 0))
 # Config.scheduler.add_job(stops_ings, 'interval', minutes=10, start_date=datetime(2023, 10, 4, 11, 7, 0))
 # Config.scheduler.add_job(stops_rest, 'interval', minutes=10, start_date=datetime(2023, 10, 4, 11, 10, 0))
-# Config.scheduler.add_job(stops_sector, 'interval', minutes=10, start_date=datetime(2023, 10, 4, 11, 13, 0))
-Config.scheduler.add_job(send_tickets, 'interval', minutes=10, start_date=datetime(2023, 10, 4, 16, 6, 0))
+# Config.scheduler.add_job(stops_sector, 'interval', minutes=5, start_date=datetime(2023, 10, 5, 9, 18, 0))
+# Config.scheduler.add_job(send_tickets, 'interval', minutes=10, start_date=datetime(2023, 10, 5, 8, 21, 0))
 
 
 @Config.dp.message_handler(CommandStart(), state=['*'])
@@ -180,8 +180,8 @@ async def call_settings(call: types.CallbackQuery, callback_data: dict, state: F
                 await cleaner.delete_message(mess)
             await call.message.answer(f'Настройки приложения: \U0001F9BE', reply_markup=KeySettings.setting)
             await States.settings.set()
-        except KeyError:
-            logger.error(f'ERROR - {data}')
+        except KeyError as e:
+            logger.error(f'ERROR - {data} - {e}')
     await pool.close()
 
 

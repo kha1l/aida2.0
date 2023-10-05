@@ -127,10 +127,6 @@ async def pyrus_api(url, access, *args):
         "Content-Type": "application/json",
         "user-agent": 'DodoVkus'
     }
-    print(url)
-    if args:
-        print(args[0])
-    print(access)
     async with aiohttp.ClientSession() as session:
         if args:
             async with session.post(url, json=args[0], headers=headers) as response:

@@ -1,6 +1,6 @@
 from loggs.logger import Log
 from utils.connection import post_api
-from utils.sending import sending_function
+from utils.sending import Send
 from datetime import datetime
 
 
@@ -16,6 +16,7 @@ async def change_time(minute):
 
 async def order_later(data, access, dt_start, dt_end, chat):
     logger = Log('LATER')
+    send = Send()
     schedule = await post_api(f'https://api.dodois.io/dodopizza/{data[1]}/staff/schedules',
                               access, units=data[2], staffType='Courier',
                               beginFrom=dt_start, beginTo=dt_end, take=990)
@@ -92,7 +93,7 @@ async def order_later(data, access, dt_start, dt_end, chat):
                 sex_word = 'вышла'
             message += f'\U0001F6A8 {name} не {sex_word} на работу\n'
         message += f'\n\U0001F4F2 <b>Отчет опозданий составлен по пиццерии {rest}</b>'
-        await sending_function(message, chat, logger)
+        await send.sending_function(message, chat, logger)
     except TypeError:
         logger.error(f'Type ERROR later - {schedule}')
     except KeyError:

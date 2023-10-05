@@ -2,11 +2,12 @@ from utils.connection import post_api
 from loggs.logger import Log
 from database.postgres_async import AsyncDatabase
 from datetime import datetime
-from utils.sending import sending
+from utils.sending import Send
 
 
-async def work_birthday(request, chat, dt):
+async def work_birthday(request, chat, dt, db, id):
     logger = Log('BIRTHDAY')
+    send = Send(db=db)
     try:
         for member in request['members']:
             dt_day = datetime.strptime(member['dateOfBirth'], '%Y-%m-%d').date()
@@ -20,11 +21,11 @@ async def work_birthday(request, chat, dt):
                           f'<b>{lastname} {name}</b> \U0001F381\n' \
                           f'{staff}, ' \
                           f'Возраст:  {age}\n'
-                await sending(chat, message, logger)
-    except TypeError:
-        logger.error(f'Type ERROR birthday')
-    except KeyError:
-        logger.error(f'Key ERROR birthday')
+                await send.sending(chat, message, logger, id)
+    except TypeError as e:
+        logger.error(f'Type ERROR birthday - {e}')
+    except KeyError as e:
+        logger.error(f'Key ERROR birthday - {e}')
 
 
 async def send_birthday():
@@ -41,7 +42,7 @@ async def send_birthday():
                 uuids = ','.join(batch)
                 members = await post_api(f'https://api.dodois.io/dodopizza/{order["country"]}/staff/members',
                                          order["access"], units=uuids, statuses='Active')
-                await work_birthday(members, order["chat_id"], dt)
+                await work_birthday(members, order["chat_id"], dt, db, order['id'])
                 try:
                     cnt = members['totalCount']
                     take = 100
@@ -49,7 +50,7 @@ async def send_birthday():
                         members = await post_api(f'https://api.dodois.io/dodopizza/{"country"}/staff/members',
                                                  order["access"], units=uuids, statuses='Active', take=100, skip=take)
                         take += 100
-                        await work_birthday(members, order["chat_id"], dt)
-                except KeyError:
-                    logger.error(f'Key ERROR birthday - {order["id"]}')
+                        await work_birthday(members, order["chat_id"], dt, db, order['id'])
+                except KeyError as e:
+                    logger.error(f'Key ERROR birthday - {order["id"]} - {e}')
     await pool.close()

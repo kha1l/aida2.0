@@ -2,7 +2,7 @@ from database.postgres_async import AsyncDatabase
 from utils.connection import post_api, public_api
 from datetime import timedelta, datetime
 from loggs.logger import Log
-from utils.sending import sending
+from utils.sending import Send
 
 
 async def change_revenue(today, week):
@@ -20,6 +20,7 @@ async def change_revenue(today, week):
 
 async def command_metrics(order, db, pool):
     logger = Log('metrics')
+    send = Send(db=db)
     minutes = order['timezone'] * 60 - 180
     created_before = (datetime.now().replace(minute=0, second=0, microsecond=0)) - timedelta(minutes=minutes)
     dt_end = datetime.strftime(created_before, '%Y-%m-%dT%H:%M:%S')
@@ -36,14 +37,27 @@ async def command_metrics(order, db, pool):
                                   f'/production/orders-handover-statistics',
                                   order["access"], units=uuids, _from=dt_start, to=dt_end, salesChannels='DineIn')
         for unit in order["uuid"]:
+            count_stationary = 0
             avg_delivery, shelf, time_rest, cooking = timedelta(0), timedelta(0), timedelta(0), timedelta(0)
             productivity, prod_hour, orders_hour, cert = 0, 0, 0, 0
             rest = await db.get_data_rest(pool, unit)
             link = f'https://publicapi.dodois.io/{order["country"]}/api/v1/' \
                    f'OperationalStatisticsForTodayAndWeekBefore/{rest["unit_id"]}'
             revenue = await public_api(link)
+            response = await post_api(f'https://api.dodois.io/dodopizza/{order["country"]}'
+                                      f'/production/orders-handover-time',
+                                      order["access"], units=uuids, _from=dt_start, to=dt_end)
+            try:
+                for order in response['ordersHandoverTime']:
+                    if order['salesChannel'] == 'Dine-in':
+                        time_rest = order['trackingPendingTime'] + order['cookingTime']
+                        if time_rest > 900:
+                            count_stationary += 1
+            except Exception as e:
+                logger.error(f'Type ERROR handover {e}')
             today = revenue['today']
             week = revenue['weekBeforeToThisTime']
+            order_rest = today['stationaryOrderCount']
             revenue_today = today['revenue']
             revenue_week = week['revenue']
             try:
@@ -78,6 +92,10 @@ async def command_metrics(order, db, pool):
             except TypeError:
                 logger.error(f'Type ERROR handover')
             rev = await change_revenue(revenue_today, revenue_week)
+            try:
+                perc_later_rest = round(count_stationary / order_rest * 100, 2)
+            except ZeroDivisionError:
+                perc_later_rest = 0
             message = f'\U0001F4CA <b>Ключевые метрики в заведении {rest["name"]}' \
                       f' по состоянию на {dt_end.split("T")[-1].split(":")[0]} часов</b>\n\n' \
                       f'Выручка: {rev}\n' \
@@ -88,8 +106,9 @@ async def command_metrics(order, db, pool):
                       f'Заказов на курьера/час: {str(orders_hour).replace(".", ",")}\n' \
                       f'Сертификаты: {cert}\n' \
                       f'Время приготовления в ресторан: {time_rest}\n' \
-                      f'Время приготовления на доставку: {cooking}\n'
-            await sending(order["chat_id"], message, logger)
+                      f'Время приготовления на доставку: {cooking}\n' \
+                      f'Процент долгих приготовлений: {perc_later_rest}%\n'
+            await send.sending(order["chat_id"], message, logger, order['id'])
 
 
 async def send_metrics():

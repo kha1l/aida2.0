@@ -1,6 +1,6 @@
 from database.postgres_async import AsyncDatabase
 from utils.connection import post_api
-from utils.sending import sending
+from utils.sending import Send
 from loggs.logger import Log
 from datetime import datetime, timedelta
 
@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 async def send_refusal():
     db = AsyncDatabase()
     pool = await db.create_pool()
+    send = Send(db=db)
     logger = Log('refusal')
     orders = await db.select_orders(pool, 'refusal')
     for order in orders:
@@ -39,7 +40,7 @@ async def send_refusal():
                               f'Время заказа: {tm}\n' \
                               f'Продукты:\n      {values[0]}\n' \
                               f'Стоимость: {int(values[1])} \U0001F4B5\n'
-                    await sending(order["chat_id"], message, logger)
+                    await send.sending(order["chat_id"], message, logger, order['id'])
             except TypeError:
                 logger.error(f'ERROR refusal')
             except KeyError:

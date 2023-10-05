@@ -1,7 +1,7 @@
 from loggs.logger import Log
 from database.postgres_async import AsyncDatabase
 from datetime import datetime, timedelta
-from utils.sending import sending_stationary
+from utils.sending import Send
 from utils.connection import post_api, public_api
 
 
@@ -9,6 +9,7 @@ async def send_stationary():
     logger = Log('STATIONARY')
     db = AsyncDatabase()
     pool = await db.create_pool()
+    send = Send(db=db)
     orders = await db.select_orders(pool, 'stationary')
     created_before = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
     dt_end = datetime.strftime(created_before, '%Y-%m-%dT%H:%M:%S')
@@ -68,8 +69,8 @@ async def send_stationary():
                               f'Опоздания: {count_later}\n\n' \
                               f'Заказов через приложение: {mobile_rest} ({perc_mobile}%)\n' \
                               f'Заказов на подносе: {orders_dine} ({perc_dine}%)\n\n'
-                    await sending_stationary(order["chat_id"], message, order["country"], unit, order['timezone'],
-                                             logger)
+                    await send.sending_statistics(order["chat_id"], message, order["country"], unit,
+                                                  order['timezone'], logger, 'rest', order['id'])
                 except TypeError:
                     logger.error(f'Type ERROR STATIONARY')
                 except KeyError:

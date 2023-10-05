@@ -44,10 +44,9 @@ async def update_tokens_app():
             refresh = token_response['refresh_token']
             await db.update_tokens(pool, token['id'], access, refresh)
             logger.info(f'UPDATE TOKEN {token["id"]} - OK')
-        except KeyError:
-            logger.error(f'Key ERROR update_app - {token["id"]}')
-        except TypeError:
-            logger.error(f'Type ERROR update_app - {token["id"]}')
+        except Exception as e:
+            logger.error(f'ERROR update_app - {token["id"]} - {e}')
+            await db.delete_user(pool, token['id'])
     await pool.close()
 
 

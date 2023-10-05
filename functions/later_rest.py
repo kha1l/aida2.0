@@ -1,11 +1,12 @@
 from loggs.logger import Log
 from utils.connection import post_api
-from utils.sending import sending_function
+from utils.sending import Send
 from datetime import datetime, timedelta
 
 
 async def order_later_rest(data, access, dt_start, dt_end, chat):
     logger = Log('LATER_REST')
+    send = Send()
     dict_source = {
         'CallCenter': 'Колл-центр', 'Website': 'Вэб-сайт',
         'Dine-in': 'Ресторан', 'MobileApp': 'Мобильное приложение'
@@ -51,7 +52,7 @@ async def order_later_rest(data, access, dt_start, dt_end, chat):
                                    f'Время приготовления: {cooking}\n' \
                                    f'Источник заказа: {source}\n\n'
         message += f'\n\U0001F4F2 <b>Отчет опозданий в ресторан составлен по пиццерии {rest}</b>'
-        await sending_function(message, chat, logger)
+        await send.sending_function(message, chat, logger)
     except TypeError:
         logger.error(f'Type ERROR later - {handover}')
     except KeyError:

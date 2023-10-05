@@ -2,7 +2,7 @@ from database.postgres_async import AsyncDatabase
 from utils.connection import pyrus_auth, pyrus_api
 from datetime import datetime, timezone, timedelta
 from loggs.logger import Log
-from utils.sending import sending
+from utils.sending import Send
 from configuration.conf import Config
 
 
@@ -11,6 +11,7 @@ async def send_tickets():
     db = AsyncDatabase()
     pool = await db.create_pool()
     logger = Log('TICKETS')
+    send = Send(db=db)
     token = await pyrus_auth()
     orders = await db.select_orders(pool, 'tickets')
     dict_catalog = {}
@@ -44,13 +45,11 @@ async def send_tickets():
         }
         pyrus = await pyrus_api(f'https://api.pyrus.com/v4/forms/{form_id["FormId"]}/register',
                                 token['access_token'], data)
-        print(pyrus)
         try:
             tasks = pyrus['tasks']
         except KeyError:
             tasks = []
         for task in tasks:
-            print(task)
             problem = []
             checker, comment, name = '', '', ''
             type_order, number_order, grade = '', 0, 0
@@ -162,5 +161,5 @@ async def send_tickets():
                     message = message.replace('Комментарии: \n', '')
                 if dt_tz == '':
                     message = message.replace('Дата и время заказа: \n', '')
-                await sending(order[5], message, logger)
+                await send.sending(order['chat_id'], message, logger)
     await pool.close()

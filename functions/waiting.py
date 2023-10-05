@@ -1,11 +1,12 @@
 from loggs.logger import Log
 from utils.connection import post_api
-from utils.sending import sending_function
+from utils.sending import Send
 from datetime import datetime, timedelta
 import pytz
 
 async def order_wait(data, access, dt_start, dt_end, chat):
     logger = Log('WAITING')
+    send = Send()
     skip = 0
     take = 500
     reach = True
@@ -44,7 +45,7 @@ async def order_wait(data, access, dt_start, dt_end, chat):
             except TypeError:
                 break
         message += f'\U0001F4F2 <b>Отчет ожиданий составлен по пиццерии {rest}</b>'
-        await sending_function(message, chat, logger)
+        await send.sending_function(message, chat, logger)
     except TypeError:
         logger.error(f'Type ERROR waiting')
     except KeyError:

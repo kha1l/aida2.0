@@ -175,6 +175,15 @@ class AsyncDatabase:
         params = (id, )
         await self.execute(pool, sql, parameters=params, commit=True)
 
+    async def delete_user(self, pool, token_id):
+        sql = '''
+            DELETE FROM aida_users
+            WHERE id IN 
+            (SELECT user_id FROM aida_tokens WHERE id = $1);
+        '''
+        params = (token_id, )
+        await self.execute(pool, sql, parameters=params, commit=True)
+
     async def remove_order(self, pool, chat, post):
         sql = '''
             DELETE FROM aida_orders WHERE chat_id = $1 AND post = $2

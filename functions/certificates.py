@@ -1,12 +1,13 @@
 from loggs.logger import Log
 from utils.connection import post_api
 from datetime import datetime, timedelta
-from utils.sending import sending_function
+from utils.sending import Send
 import pytz
 
 
 async def order_certs(data, access, dt_start, dt_end, chat):
     logger = Log('CERTIFICATES')
+    send = Send()
     certificates = await post_api(f'https://api.dodois.io/dodopizza/{data[1]}/delivery/vouchers',
                                   access, units=data[2], _from=dt_start, to=dt_end, take=500)
     orders = await post_api(f'https://api.dodois.io/dodopizza/{data[1]}/delivery/couriers-orders',
@@ -46,8 +47,8 @@ async def order_certs(data, access, dt_start, dt_end, chat):
                            f'Поездка дольше прогноза: {predict}\n' \
                            f'Заказов в поездке: {trip}\n\n'
         message += f'\U0001F4F2 <b>Отчет сертификатов составлен по пиццерии {rest}</b>'
-        await sending_function(message, chat, logger)
-    except TypeError:
-        logger.error(f'Type ERROR certificates - {certificates}')
-    except KeyError:
-        logger.error(f'Key ERROR certificates - {certificates}')
+        await send.sending_function(message, chat, logger)
+    except TypeError as e:
+        logger.error(f'Type ERROR certificates - {certificates} - {e}')
+    except KeyError as e:
+        logger.error(f'Key ERROR certificates - {certificates} - {e}')

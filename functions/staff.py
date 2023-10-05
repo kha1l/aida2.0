@@ -1,12 +1,13 @@
 from utils.connection import post_api
 from loggs.logger import Log
 from database.postgres_async import AsyncDatabase
-from utils.sending import sending
+from utils.sending import Send
 from datetime import datetime, timedelta
 
 
-async def work_staff(request, order, dt):
+async def work_staff(request, order, dt, db):
     logger = Log('STAFF')
+    send = Send(db=db)
     try:
         for member in request['members']:
             holiday_day = datetime.strptime(member['dateOfBirth'], '%Y-%m-%d').date() - timedelta(days=1)
@@ -32,7 +33,7 @@ async def work_staff(request, order, dt):
                               f'<b>{lastname} {name}</b> \U0001F490\n' \
                               f'{staff}, ' \
                               f'Возраст:  {age}\n'
-                    await sending(order['chat_id'], message, logger)
+                    await send.sending(order['chat_id'], message, logger, order['id'])
             if dt.day == hired_day.day and dt.month == hired_day.month:
                 when_hired = '\U0000203C Завтра'
                 hire = dt.year - hired_day.year
@@ -51,7 +52,7 @@ async def work_staff(request, order, dt):
                           f'<b>{lastname} {name}</b> \U0001F33B\n' \
                           f'{staff}, ' \
                           f'Стаж:  {hire}\n'
-                await sending(order['chat_id'], message, logger)
+                await send.sending(order['chat_id'], message, logger, order['id'])
     except TypeError:
         logger.error(f'Type ERROR staff')
     except KeyError:
@@ -72,7 +73,7 @@ async def send_staff():
                 uuids = ','.join(batch)
                 members = await post_api(f'https://api.dodois.io/dodopizza/{order["country"]}/staff/members',
                                          order["access"], units=uuids, statuses='Active')
-                await work_staff(members, order, dt)
+                await work_staff(members, order, dt, db)
                 try:
                     cnt = members['totalCount']
                     take = 100
@@ -80,7 +81,7 @@ async def send_staff():
                         members = await post_api(f'https://api.dodois.io/dodopizza/{order["country"]}/staff/members',
                                                  order["access"], units=uuids, statuses='Active', take=100, skip=take)
                         take += 100
-                        await work_staff(members, order, dt)
+                        await work_staff(members, order, dt, db)
                 except KeyError:
                     logger.error(f'Key ERROR staff - {order["id"]}')
     await pool.close()
