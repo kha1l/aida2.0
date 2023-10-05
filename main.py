@@ -18,12 +18,14 @@ from functions.couriers import get_orders, send_couriers
 from functions.stationary import send_stationary
 from functions.staff import send_staff
 from functions.tickets import send_tickets
+from functions.stock import send_stock
 from functions.stops import stops_rest, stops_sector, stops_ings, stops_key_ings
 from datetime import datetime
 
 
 # Config.scheduler.add_job(update_subs_day, 'cron', day_of_week='*', hour=17, minute=0)
 Config.scheduler.add_job(update_tokens_app, 'cron', day_of_week="*", hour=11, minute=26)
+Config.scheduler.add_job(send_stock, 'cron', day_of_week="*", hour=13, minute=25)
 Config.scheduler.add_job(send_birthday, 'cron', day_of_week="*", hour='0-13/1', minute=20)
 Config.scheduler.add_job(send_metrics, 'cron', day_of_week="*", hour='0-23', minute=0)
 Config.scheduler.add_job(send_couriers, 'cron', day_of_week="*", hour='0-23', minute=10)
