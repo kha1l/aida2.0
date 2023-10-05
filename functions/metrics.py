@@ -29,11 +29,11 @@ async def command_metrics(order, db, pool):
     for i in range(0, len(order['uuid']), 29):
         batch = order['uuid'][i:i + 29]
         uuids = ','.join(batch)
-        delivery_stat = await post_api(f'https://api.dodois.io/dodopizza/{order["country"]}/delivery/statistics/',
+        delivery_stat = await post_api(f'https://api.dodois.io/{order["concept"]}/{order["country"]}/delivery/statistics/',
                                        order["access"], units=uuids, _from=dt_start, to=dt_end)
-        product = await post_api(f'https://api.dodois.io/dodopizza/{order["country"]}/production/productivity',
+        product = await post_api(f'https://api.dodois.io/{order["concept"]}/{order["country"]}/production/productivity',
                                  order["access"], units=uuids, _from=dt_start, to=dt_end)
-        handover = await post_api(f'https://api.dodois.io/dodopizza/{order["country"]}'
+        handover = await post_api(f'https://api.dodois.io/{order["concept"]}/{order["country"]}'
                                   f'/production/orders-handover-statistics',
                                   order["access"], units=uuids, _from=dt_start, to=dt_end, salesChannels='DineIn')
         for unit in order["uuid"]:
@@ -44,7 +44,7 @@ async def command_metrics(order, db, pool):
             link = f'https://publicapi.dodois.io/{order["country"]}/api/v1/' \
                    f'OperationalStatisticsForTodayAndWeekBefore/{rest["unit_id"]}'
             revenue = await public_api(link)
-            response = await post_api(f'https://api.dodois.io/dodopizza/{order["country"]}'
+            response = await post_api(f'https://api.dodois.io/{order["concept"]}/{order["country"]}'
                                       f'/production/orders-handover-time',
                                       order["access"], units=uuids, _from=dt_start, to=dt_end)
             try:

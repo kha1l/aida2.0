@@ -71,14 +71,14 @@ async def send_staff():
             for i in range(0, len(order['uuid']), 29):
                 batch = order['uuid'][i:i + 29]
                 uuids = ','.join(batch)
-                members = await post_api(f'https://api.dodois.io/dodopizza/{order["country"]}/staff/members',
+                members = await post_api(f'https://api.dodois.io/{order["concept"]}/{order["country"]}/staff/members',
                                          order["access"], units=uuids, statuses='Active')
                 await work_staff(members, order, dt, db)
                 try:
                     cnt = members['totalCount']
                     take = 100
                     while take < cnt:
-                        members = await post_api(f'https://api.dodois.io/dodopizza/{order["country"]}/staff/members',
+                        members = await post_api(f'https://api.dodois.io/{order["concept"]}/{order["country"]}/staff/members',
                                                  order["access"], units=uuids, statuses='Active', take=100, skip=take)
                         take += 100
                         await work_staff(members, order, dt, db)

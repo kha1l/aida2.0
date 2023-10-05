@@ -25,9 +25,9 @@ async def send_couriers():
             for i in range(0, len(order['uuid']), 29):
                 batch = order['uuid'][i:i + 29]
                 uuids = ','.join(batch)
-                statistics = await post_api(f'https://api.dodois.io/dodopizza/{order["country"]}/delivery/statistics/',
+                statistics = await post_api(f'https://api.dodois.io/{order["concept"]}/{order["country"]}/delivery/statistics/',
                                             order["access"], units=uuids, _from=dt_start, to=dt_end)
-                productivity = await post_api(f'https://api.dodois.io/dodopizza/{order["country"]}/production/productivity',
+                productivity = await post_api(f'https://api.dodois.io/{order["concept"]}/{order["country"]}/production/productivity',
                                               order["access"], units=uuids, _from=dt_start, to=dt_end)
                 prod_dict = {}
                 try:
@@ -36,7 +36,7 @@ async def send_couriers():
                     reach = True
                     dict_orders = {}
                     while reach:
-                        orders = await post_api(f'https://api.dodois.io/dodopizza/{order["country"]}/delivery/couriers-orders',
+                        orders = await post_api(f'https://api.dodois.io/{order["concept"]}/{order["country"]}/delivery/couriers-orders',
                                                 order["access"], units=uuids, _from=dt_start, to=dt_end, skip=skip, take=take)
                         skip += take
                         for o in orders['couriersOrders']:
@@ -116,7 +116,8 @@ async def send_couriers():
                                   f'Поездки с 3 и более: {three} ({perc_three}%)\n' \
                                   f'Загруженность курьеров: {workload}%\n\n'
                         await send.sending_statistics(order["chat_id"], message, order["country"], uuid,
-                                                      order['timezone'], logger, 'courier', order['id'])
+                                                      order['timezone'], logger, 'courier', order['id'],
+                                                      order['concept'])
                 except TypeError:
                     logger.error(f'Type ERROR statistics - {statistics}')
                 except KeyError:

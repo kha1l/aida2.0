@@ -8,9 +8,9 @@ import pytz
 async def order_certs(data, access, dt_start, dt_end, chat):
     logger = Log('CERTIFICATES')
     send = Send()
-    certificates = await post_api(f'https://api.dodois.io/dodopizza/{data[1]}/delivery/vouchers',
+    certificates = await post_api(f'https://api.dodois.io/{data[4]}/{data[1]}/delivery/vouchers',
                                   access, units=data[2], _from=dt_start, to=dt_end, take=500)
-    orders = await post_api(f'https://api.dodois.io/dodopizza/{data[1]}/delivery/couriers-orders',
+    orders = await post_api(f'https://api.dodois.io/{data[4]}/{data[1]}/delivery/couriers-orders',
                             access, units=data[2], _from=dt_start, to=dt_end, take=990)
     cert_dict = {}
     dt = dt_start.split('T')[0]
@@ -24,7 +24,7 @@ async def order_certs(data, access, dt_start, dt_end, chat):
         for order in orders['couriersOrders']:
             if order['orderId'] in cert_dict:
                 rest = order['unitName']
-                courier = await post_api(f'https://api.dodois.io/dodopizza/{data[1]}/staff/'
+                courier = await post_api(f'https://api.dodois.io/{data[4]}/{data[1]}/staff/'
                                          f'members/{order["courierStaffId"]}', access)
                 name = f"{courier['lastName']} {courier['firstName']}"
                 number = order['orderNumber']

@@ -322,9 +322,11 @@ async def stationary(call: types.CallbackQuery, callback_data: dict, state: FSMC
     try:
         code = params['country_code']
         tz = params['timezone']
+        concept = params['concept']
     except KeyError:
         code = 'ru'
         tz = 3
+        concept = 'dodopizza'
     state_now = await state.get_state()
     orders = await db.get_orders(pool, str(call.message.chat.id), callback_data['order'], code, tz)
     if orders:
@@ -336,9 +338,30 @@ async def stationary(call: types.CallbackQuery, callback_data: dict, state: FSMC
     await call.message.answer(f'Выбери заведения:', reply_markup=key_rest.rest)
     await state.update_data(orders=units_order, key=key, order=callback_data['order'],
                             subs_dict=subs_dict, unit_del=unit_del, unit_add=unit_add,
-                            code=code, tz=tz, in_orders=in_orders, id_order=id_order, stc=state_now)
+                            code=code, tz=tz, in_orders=in_orders, id_order=id_order,
+                            stc=state_now, concept=concept)
     await pool.close()
     await States.pizza.set()
+
+
+@Config.dp.callback_query_handler(text="audit", state=States.pizza)
+async def audit(call: types.CallbackQuery):
+    await call.message.answer(f"Пришлите мне файл с последней месячной ревизии в заведении")
+    await States.audit.set()
+
+
+@Config.dp.message_handler(content_types=['document'], state=States.audit)
+async def audit_file(message: types.Message):
+    cleaner = Clean()
+    await cleaner.delete_message(message)
+    file_name = message.document.file_name
+    if file_name.endswith('.xlsx'):
+        print(message.document.file_id)
+        await message.answer(f'Файл успешно загружен')
+        await States.pizza.set()
+    else:
+        await message.answer(f'Это должен быть xlsx файл. Попробуйте прислать еще раз')
+
 
 
 @Config.dp.callback_query_handler(KeyRest.callback_rest.filter(), state=States.pizza)
@@ -383,7 +406,7 @@ async def stationary(call: types.CallbackQuery, callback_data: dict, state: FSMC
                 await db.drop_order(pool, id_order)
         else:
             await db.add_order(pool, data['order'], data['orders'], data['user_id'],
-                               str(call.message.chat.id), data['code'], data['tz'])
+                               str(call.message.chat.id), data['code'], data['tz'], data['concept'])
         key = data['key']
         await pool.close()
         if data['order'].startswith('stops'):

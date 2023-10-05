@@ -40,14 +40,15 @@ async def send_birthday():
             for i in range(0, len(order['uuid']), 29):
                 batch = order['uuid'][i:i + 29]
                 uuids = ','.join(batch)
-                members = await post_api(f'https://api.dodois.io/dodopizza/{order["country"]}/staff/members',
+                members = await post_api(f'https://api.dodois.io/{order["concept"]}/{order["country"]}/staff/members',
                                          order["access"], units=uuids, statuses='Active')
                 await work_birthday(members, order["chat_id"], dt, db, order['id'])
                 try:
                     cnt = members['totalCount']
                     take = 100
                     while take < cnt:
-                        members = await post_api(f'https://api.dodois.io/dodopizza/{order["country"]}/staff/members',
+                        members = await post_api(f'https://api.dodois.io/{order["concept"]}/{order["country"]}'
+                                                 f'/staff/members',
                                                  order["access"], units=uuids, statuses='Active', take=100, skip=take)
                         take += 100
                         await work_birthday(members, order["chat_id"], dt, db, order['id'])

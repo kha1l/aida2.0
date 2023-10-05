@@ -11,7 +11,7 @@ async def order_later_rest(data, access, dt_start, dt_end, chat):
         'CallCenter': 'Колл-центр', 'Website': 'Вэб-сайт',
         'Dine-in': 'Ресторан', 'MobileApp': 'Мобильное приложение'
     }
-    handover = await post_api(f'https://api.dodois.io/dodopizza/{data[1]}/production/orders-handover-time',
+    handover = await post_api(f'https://api.dodois.io/{data[4]}/{data[1]}/production/orders-handover-time',
                               access, units=data[2], _from=dt_start, to=dt_end)
     dt = dt_start.split('T')[0]
     dt_for_message = datetime.strptime(dt, '%Y-%m-%d')

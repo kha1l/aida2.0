@@ -18,14 +18,14 @@ async def order_wait(data, access, dt_start, dt_end, chat):
         message = f'\U0001F4A4 <b> Ожидания за {dt_for_message}</b>\n\n'
         rest = ''
         while reach:
-            orders = await post_api(f'https://api.dodois.io/dodopizza/{data[1]}/delivery/couriers-orders',
+            orders = await post_api(f'https://api.dodois.io/{data[4]}/{data[1]}/delivery/couriers-orders',
                                     access, units=data[2], _from=dt_start, to=dt_end, skip=skip, take=take)
             skip += take
             for order in orders['couriersOrders']:
                 wait = order['orderAssemblyAvgTime']
                 if wait > 300:
                     rest = order['unitName']
-                    courier = await post_api(f'https://api.dodois.io/dodopizza/{data[1]}/staff/'
+                    courier = await post_api(f'https://api.dodois.io/{data[4]}/{data[1]}/staff/'
                                              f'members/{order["courierStaffId"]}', access)
                     name = f"{courier['lastName']} {courier['firstName']}"
                     number = order['orderNumber']

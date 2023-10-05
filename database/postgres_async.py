@@ -81,11 +81,11 @@ class AsyncDatabase:
 
     async def add_stationary(self, pool, unit):
         sql = '''
-            INSERT INTO aida_stationary (name, uuid, unit_id, country_code, timezone, user_id, subs, expires)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            INSERT INTO aida_stationary (name, uuid, unit_id, country_code, timezone, user_id, subs, expires, concept)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
         '''
         params = (unit['name'], unit['uuid'], unit['id'], unit['code'], unit['tz'], [unit['user_id']],
-                  unit['subs'], unit['expires'])
+                  unit['subs'], unit['expires'], unit['concept'])
         await self.execute(pool, sql, parameters=params, commit=True)
 
     async def check_stationary(self, pool, uuid):
@@ -118,7 +118,7 @@ class AsyncDatabase:
 
     async def select_stationary(self, pool, id):
         sql = '''
-            SELECT name, unit_id, uuid, country_code, timezone, subs, expires
+            SELECT name, unit_id, uuid, country_code, timezone, subs, expires, concept
             FROM aida_stationary
             WHERE $1 = ANY(user_id);
         '''
@@ -153,12 +153,12 @@ class AsyncDatabase:
         params = (chat, post, country, tz)
         return await self.execute(pool, sql, parameters=params, fetchone=True)
 
-    async def add_order(self, pool, post, uuid, user, chat, country, tz):
+    async def add_order(self, pool, post, uuid, user, chat, country, tz, concept):
         sql = '''
-            INSERT INTO aida_orders (post, uuid, user_id, chat_id, country, timezone) 
-            VALUES ($1, $2, $3, $4, $5, $6)
+            INSERT INTO aida_orders (post, uuid, user_id, chat_id, country, timezone, concept) 
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
         '''
-        params = (post, uuid, user, chat, country, tz)
+        params = (post, uuid, user, chat, country, tz, concept)
         await self.execute(pool, sql, parameters=params, commit=True)
 
     async def update_order(self, pool, uuid, id):
@@ -207,7 +207,7 @@ class AsyncDatabase:
     async def select_orders(self, pool, post):
         sql = '''
             SELECT aida_tokens.access, aida_orders.uuid, aida_orders.country, aida_orders.timezone, 
-            aida_orders.chat_id, aida_orders.id
+            aida_orders.chat_id, aida_orders.id, aida_orders.concept
             FROM aida_orders JOIN aida_tokens ON aida_tokens.user_id = aida_orders.user_id
             WHERE aida_orders.post = $1;
         '''
@@ -217,7 +217,7 @@ class AsyncDatabase:
     async def select_orders_metrics(self, pool, post, chat):
         sql = '''
             SELECT aida_tokens.access, aida_orders.uuid, aida_orders.country, aida_orders.timezone, 
-            aida_orders.chat_id, aida_orders.id
+            aida_orders.chat_id, aida_orders.id, aida_orders.concept
             FROM aida_orders JOIN aida_tokens ON aida_tokens.user_id = aida_orders.user_id
             WHERE aida_orders.post = $1 AND aida_orders.chat_id = $2;
         '''
@@ -233,9 +233,10 @@ class AsyncDatabase:
 
     async def select_user(self, pool, user):
         sql = '''
-            SELECT aida_tokens.access
+            SELECT aida_tokens.access, ap.concept
             FROM aida_tokens
             INNER JOIN aida_users ON aida_tokens.user_id = aida_users.id
+            INNER JOIN aida_persons ap on aida_users.id = ap.user_id
             WHERE aida_users.user_id = $1;
         '''
         params = (user, )

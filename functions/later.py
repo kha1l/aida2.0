@@ -17,10 +17,10 @@ async def change_time(minute):
 async def order_later(data, access, dt_start, dt_end, chat):
     logger = Log('LATER')
     send = Send()
-    schedule = await post_api(f'https://api.dodois.io/dodopizza/{data[1]}/staff/schedules',
+    schedule = await post_api(f'https://api.dodois.io/{data[4]}/{data[1]}/staff/schedules',
                               access, units=data[2], staffType='Courier',
                               beginFrom=dt_start, beginTo=dt_end, take=990)
-    shifts = await post_api(f'https://api.dodois.io/dodopizza/{data[1]}/staff/shifts',
+    shifts = await post_api(f'https://api.dodois.io/{data[4]}/{data[1]}/staff/shifts',
                             access, units=data[2], staffTypeName='Courier',
                             clockInFrom=dt_start, clockInTo=dt_end, take=990)
     dt = dt_start.split('T')[0]
@@ -45,7 +45,7 @@ async def order_later(data, access, dt_start, dt_end, chat):
                     delta_start = (start_shift - start_sch).seconds / 60
                     if delta_start > 10:
                         tm = await change_time(int(delta_start))
-                        courier = await post_api(f'https://api.dodois.io/dodopizza/{data[1]}/staff/'
+                        courier = await post_api(f'https://api.dodois.io/{data[4]}/{data[1]}/staff/'
                                                  f'members/{shift_id}', access)
                         name = f"{courier['lastName']} {courier['firstName']}"
                         sex = courier['sex']
@@ -59,7 +59,7 @@ async def order_later(data, access, dt_start, dt_end, chat):
                     delta_end = (end_sch - end_shift).seconds / 60
                     if delta_end > 10:
                         tm = await change_time(int(delta_end))
-                        courier = await post_api(f'https://api.dodois.io/dodopizza/{data[1]}/staff/'
+                        courier = await post_api(f'https://api.dodois.io/{data[4]}/{data[1]}/staff/'
                                                  f'members/{shift_id}', access)
                         name = f"{courier['lastName']} {courier['firstName']}"
                         sex = courier['sex']
@@ -73,7 +73,7 @@ async def order_later(data, access, dt_start, dt_end, chat):
                 except KeyError:
                     pass
             else:
-                courier = await post_api(f'https://api.dodois.io/dodopizza/{data[1]}/staff/'
+                courier = await post_api(f'https://api.dodois.io/{data[4]}/{data[1]}/staff/'
                                          f'members/{shift_id}', access)
                 name = f"{courier['lastName']} {courier['firstName']}"
                 sex = courier['sex']
@@ -83,7 +83,7 @@ async def order_later(data, access, dt_start, dt_end, chat):
                     sex_word = 'вышла'
                 message += f'\U00002753 {name} {sex_word} на работу не в свою смену\n'
         for key in schedule_dict:
-            courier = await post_api(f'https://api.dodois.io/dodopizza/{data[1]}/staff/'
+            courier = await post_api(f'https://api.dodois.io/{data[4]}/{data[1]}/staff/'
                                      f'members/{key}', access)
             name = f"{courier['lastName']} {courier['firstName']}"
             sex = courier['sex']

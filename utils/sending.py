@@ -12,11 +12,11 @@ class Send:
         else:
             self.db = None
 
-    async def sending_statistics(self, chat, message, order, uuid, tz, logger, types, order_id):
+    async def sending_statistics(self, chat, message, order, uuid, tz, logger, types, order_id, concept):
         pool = await self.db.create_pool()
         try:
             if order != '':
-                key = KeyStats(order, uuid, tz)
+                key = KeyStats(order, uuid, tz, concept)
                 if types == 'rest':
                     keys = key.stationary
                 else:

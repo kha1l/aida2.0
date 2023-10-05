@@ -140,6 +140,12 @@ class KeyRest:
                     callback_data=self.callback_rest.new(unit=unit['uuid'])
                 )
                 self.rest.insert(button)
+        if call == 'stock':
+            audit = InlineKeyboardButton(
+                text=f'\U0001F4DA Внести файл месячной ревизии',
+                callback_data='audit'
+            )
+            self.rest.add(audit)
         commit = InlineKeyboardButton(
             text=f'\U0001F44C Применить',
             callback_data=self.callback_rest.new(unit='commit')
@@ -214,29 +220,29 @@ class KeyOut:
 class KeyStats:
     wait_callback = CallbackData('w', 'func_id')
 
-    def __init__(self, order, uuid, tz):
+    def __init__(self, order, uuid, tz, concept):
         self.stats = InlineKeyboardMarkup(row_width=1, inline_keyboard=[
             [
                 InlineKeyboardButton(
                     text=f'\U0001F4A4 Ожидания курьеров',
-                    callback_data=self.wait_callback.new(func_id=f'w.{order}.{uuid}.{tz}')
+                    callback_data=self.wait_callback.new(func_id=f'w.{order}.{uuid}.{tz}.{concept}')
                 )],
             [
                 InlineKeyboardButton(
                     text=f'\U0000231A Опоздания/прогулы',
-                    callback_data=self.wait_callback.new(func_id=f'l.{order}.{uuid}.{tz}')
+                    callback_data=self.wait_callback.new(func_id=f'l.{order}.{uuid}.{tz}.{concept}')
                 )],
             [
                 InlineKeyboardButton(
                     text=f'\U0001F4D1 Сертификаты',
-                    callback_data=self.wait_callback.new(func_id=f'c.{order}.{uuid}.{tz}')
+                    callback_data=self.wait_callback.new(func_id=f'c.{order}.{uuid}.{tz}.{concept}')
                 )]
         ])
         self.stationary = InlineKeyboardMarkup(row_width=1, inline_keyboard=[
             [
                 InlineKeyboardButton(
                     text=f'\U0001F4C3 Опоздания в ресторане',
-                    callback_data=self.wait_callback.new(func_id=f's.{order}.{uuid}.{tz}')
+                    callback_data=self.wait_callback.new(func_id=f's.{order}.{uuid}.{tz}.{concept}')
                 )]
         ])
 

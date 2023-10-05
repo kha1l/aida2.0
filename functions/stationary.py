@@ -19,7 +19,7 @@ async def send_stationary():
         hour = datetime.now().hour - 3 + order['timezone']
         if hour == 18:
             for unit in order['uuid']:
-                handover = await post_api(f'https://api.dodois.io/dodopizza/{order["country"]}/production/orders-handover-time',
+                handover = await post_api(f'https://api.dodois.io/{order["concept"]}/{order["country"]}/production/orders-handover-time',
                                           order["access"], units=unit, _from=dt_start, to=dt_end)
                 rest_id = await db.get_data_rest(pool, unit)
                 link = f'https://publicapi.dodois.io/{order["country"]}/api/v1/unitinfo/{rest_id["unit_id"]}' \
@@ -70,7 +70,7 @@ async def send_stationary():
                               f'Заказов через приложение: {mobile_rest} ({perc_mobile}%)\n' \
                               f'Заказов на подносе: {orders_dine} ({perc_dine}%)\n\n'
                     await send.sending_statistics(order["chat_id"], message, order["country"], unit,
-                                                  order['timezone'], logger, 'rest', order['id'])
+                                                  order['timezone'], logger, 'rest', order['id'], order['concept'])
                 except TypeError:
                     logger.error(f'Type ERROR STATIONARY')
                 except KeyError:

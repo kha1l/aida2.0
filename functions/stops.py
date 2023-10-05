@@ -23,7 +23,7 @@ async def stops_rest():
         for i in range(0, len(order["uuid"]), 29):
             batch = order["uuid"][i:i + 29]
             uuids = ','.join(batch)
-            channel = await post_api(f'https://api.dodois.io/dodopizza/{order["country"]}/'
+            channel = await post_api(f'https://api.dodois.io/{order["concept"]}/{order["country"]}/'
                                      f'production/stop-sales-channels',
                                      order["access"], units=uuids, _from=dt_start, to=dt_end)
             try:
@@ -69,7 +69,7 @@ async def stops_sector():
         for i in range(0, len(order["uuid"]), 29):
             batch = order["uuid"][i:i + 29]
             uuids = ','.join(batch)
-            channel = await post_api(f'https://api.dodois.io/dodopizza/{order["country"]}/'
+            channel = await post_api(f'https://api.dodois.io/{order["concept"]}/{order["country"]}/'
                                      f'delivery/stop-sales-sectors',
                                      order["access"], units=uuids, _from=dt_start, to=dt_end)
             try:
@@ -119,7 +119,7 @@ async def stops_ings():
         for i in range(0, len(order["uuid"]), 29):
             batch = order["uuid"][i:i + 29]
             uuids = ','.join(batch)
-            ingredient = await post_api(f'https://api.dodois.io/dodopizza/{order["country"]}/'
+            ingredient = await post_api(f'https://api.dodois.io/{order["concept"]}/{order["country"]}/'
                                         f'production/stop-sales-ingredients',
                                         order["access"], units=uuids, _from=dt_start, to=dt_end)
             try:
@@ -180,7 +180,7 @@ async def stops_key_ings():
         for i in range(0, len(order["uuid"]), 29):
             batch = order["uuid"][i:i + 29]
             uuids = ','.join(batch)
-            ingredient = await post_api(f'https://api.dodois.io/dodopizza/{order["country"]}/'
+            ingredient = await post_api(f'https://api.dodois.io/{order["concept"]}/{order["country"]}/'
                                         f'production/stop-sales-ingredients',
                                         order["access"], units=uuids, _from=dt_start, to=dt_end)
             try:

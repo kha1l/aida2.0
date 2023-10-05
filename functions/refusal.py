@@ -20,7 +20,7 @@ async def send_refusal():
             dt_end = datetime.strftime(created_before, '%Y-%m-%dT%H:%M:%S')
             created_after = created_before - timedelta(hours=1)
             dt_start = datetime.strftime(created_after, '%Y-%m-%dT%H:%M:%S')
-            refusal = await post_api(f'https://api.dodois.io/dodopizza/{order["country"]}/accounting/cancelled-sales',
+            refusal = await post_api(f'https://api.dodois.io/{order["concept"]}/{order["country"]}/accounting/cancelled-sales',
                                      order["access"], units=uuids, _from=dt_start, to=dt_end, take=900)
             try:
                 product_dict = {}

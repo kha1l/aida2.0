@@ -21,7 +21,7 @@ class Units:
                     for unit in access_units:
                         if unit['id'].upper() == units['UUId'] and units['Type'] == 1 and units['State'] == 1:
                             await self.config_units((unit['name'], units['Id'], unit['id'], code,
-                                                     units['TimeZoneShift'], self.id))
+                                                     units['TimeZoneShift'], self.id, unit['businessId']))
                 return self.units
         except IndexError:
             logger.error(f"ERROR INDEX - {self.id}")
@@ -37,7 +37,8 @@ class Units:
             'uuid': data[2],
             'code': data[3],
             'tz': data[4],
-            'user_id': data[5]
+            'user_id': data[5],
+            'concept': data[6]
         }
         self.units.append(units)
 
