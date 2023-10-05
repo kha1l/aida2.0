@@ -43,7 +43,7 @@ async def work_staff(request, order, dt, db):
             else:
                 when_hired = ''
                 hire = 1
-            if when_hired:
+            if when_hired and hire != 0:
                 rest = member['unitName']
                 staff = member['positionName']
                 name = member['firstName']
@@ -66,7 +66,7 @@ async def send_staff():
     orders = await db.select_orders(pool, 'staff')
     for order in orders:
         hour = datetime.now().hour - 3 + order['timezone']
-        if hour == 15:
+        if hour == 18:
             dt = datetime.now().date()
             for i in range(0, len(order['uuid']), 29):
                 batch = order['uuid'][i:i + 29]

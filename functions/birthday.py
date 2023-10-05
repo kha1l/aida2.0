@@ -35,7 +35,7 @@ async def send_birthday():
     orders = await db.select_orders(pool, 'birthday')
     for order in orders:
         hour = datetime.now().hour - 3 + order['timezone']
-        if hour == 11:
+        if hour == 18:
             dt = datetime.now().date()
             for i in range(0, len(order['uuid']), 29):
                 batch = order['uuid'][i:i + 29]
@@ -47,7 +47,7 @@ async def send_birthday():
                     cnt = members['totalCount']
                     take = 100
                     while take < cnt:
-                        members = await post_api(f'https://api.dodois.io/dodopizza/{"country"}/staff/members',
+                        members = await post_api(f'https://api.dodois.io/dodopizza/{order["country"]}/staff/members',
                                                  order["access"], units=uuids, statuses='Active', take=100, skip=take)
                         take += 100
                         await work_birthday(members, order["chat_id"], dt, db, order['id'])

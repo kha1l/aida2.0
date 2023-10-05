@@ -161,5 +161,5 @@ async def send_tickets():
                     message = message.replace('Комментарии: \n', '')
                 if dt_tz == '':
                     message = message.replace('Дата и время заказа: \n', '')
-                await send.sending(order['chat_id'], message, logger)
+                await send.sending(order['chat_id'], message, logger, order['id'])
     await pool.close()

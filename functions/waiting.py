@@ -4,6 +4,7 @@ from utils.sending import Send
 from datetime import datetime, timedelta
 import pytz
 
+
 async def order_wait(data, access, dt_start, dt_end, chat):
     logger = Log('WAITING')
     send = Send()
@@ -30,7 +31,7 @@ async def order_wait(data, access, dt_start, dt_end, chat):
                     number = order['orderNumber']
                     delivery = order['handedOverToDeliveryAt'].split('.')[0]
                     order_delivery = datetime.strptime(delivery, '%Y-%m-%dT%H:%M:%S').replace(tzinfo=pytz.UTC)
-                    order_delivery = order_delivery + timedelta(hours=data[3])
+                    order_delivery = order_delivery + timedelta(hours=int(data[3]))
                     trip = order['tripOrdersCount']
                     time_cooking = order_delivery - timedelta(seconds=order['heatedShelfTime'])
                     message += f'\U000026F7 Курьер: {name}\n' \

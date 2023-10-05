@@ -25,19 +25,19 @@ from datetime import datetime
 
 # Config.scheduler.add_job(update_subs_day, 'cron', day_of_week='*', hour=17, minute=0)
 Config.scheduler.add_job(update_tokens_app, 'cron', day_of_week="*", hour=11, minute=26)
-Config.scheduler.add_job(send_stock, 'cron', day_of_week="*", hour=13, minute=25)
-Config.scheduler.add_job(send_birthday, 'cron', day_of_week="*", hour='0-13/1', minute=20)
+Config.scheduler.add_job(send_stock, 'cron', day_of_week="*", hour=18, minute=25)
+Config.scheduler.add_job(send_birthday, 'cron', day_of_week="*", hour='0-23', minute=20)
 Config.scheduler.add_job(send_metrics, 'cron', day_of_week="*", hour='0-23', minute=0)
-Config.scheduler.add_job(send_couriers, 'cron', day_of_week="*", hour='0-23', minute=10)
+Config.scheduler.add_job(send_couriers, 'cron', day_of_week="*", hour='0-23', minute=38)
 Config.scheduler.add_job(send_staff, 'cron', day_of_week="*", hour='0-23', minute=29)
 Config.scheduler.add_job(send_stationary, 'cron', day_of_week="*", hour='0-23', minute=40)
 Config.scheduler.add_job(send_revenue, 'cron', day_of_week="*", hour='0-23', minute=30)
 Config.scheduler.add_job(send_refusal, 'cron', day_of_week="*", hour='0-23', minute=15)
-Config.scheduler.add_job(stops_key_ings, 'interval', minutes=10, start_date=datetime(2023, 10, 5, 11, 44, 0))
-Config.scheduler.add_job(stops_ings, 'interval', minutes=10, start_date=datetime(2023, 10, 5, 11, 47, 0))
-Config.scheduler.add_job(stops_rest, 'interval', minutes=10, start_date=datetime(2023, 10, 5, 11, 50, 0))
-Config.scheduler.add_job(stops_sector, 'interval', minutes=5, start_date=datetime(2023, 10, 5, 11, 58, 0))
-Config.scheduler.add_job(send_tickets, 'interval', minutes=10, start_date=datetime(2023, 10, 5, 11, 40, 0))
+Config.scheduler.add_job(stops_key_ings, 'interval', minutes=10, start_date=datetime(2023, 10, 5, 17, 24, 0))
+Config.scheduler.add_job(stops_ings, 'interval', minutes=10, start_date=datetime(2023, 10, 5, 17, 27, 0))
+Config.scheduler.add_job(stops_rest, 'interval', minutes=10, start_date=datetime(2023, 10, 5, 17, 30, 0))
+Config.scheduler.add_job(stops_sector, 'interval', minutes=5, start_date=datetime(2023, 10, 5, 17, 33, 0))
+Config.scheduler.add_job(send_tickets, 'interval', minutes=10, start_date=datetime(2023, 10, 5, 17, 35, 0))
 
 
 @Config.dp.message_handler(CommandStart(), state=['*'])
@@ -73,7 +73,7 @@ async def start_func(message: types.Message, state: FSMContext):
             await state.update_data(units=sorted_units, user_id=record['id'])
             await cleaner.delete_message(mess)
             await message.answer(f'Привет, {message.from_user.full_name}! \n\n'
-                                 f'Я - Aida. Помогая удаленно управлять рестораном или сетью ресторанов '
+                                 f'Я - Aida. Помогаю удаленно управлять рестораном или сетью ресторанов '
                                  f'Dodo Brands и принимать правильные управленческие решения',
                                  reply_markup=KeyStart.type_order)
             await States.types.set()
@@ -96,7 +96,7 @@ async def start_func(message: types.Message, state: FSMContext):
             await state.update_data(units=sorted_units, user_id=account['id'])
             await cleaner.delete_message(mess)
             await message.answer(f'Привет, {message.from_user.full_name}! \n\n'
-                                 f'Я - Aida. Помогая удаленно управлять рестораном или сетью ресторанов '
+                                 f'Я - Aida. Помогаю удаленно управлять рестораном или сетью ресторанов '
                                  f'Dodo Brands и принимать правильные управленческие решения',
                                  reply_markup=KeyStart.type_order)
             await States.types.set()
@@ -110,14 +110,14 @@ async def start_func(message: types.Message, state: FSMContext):
             sorted_units = sorted(access_units, key=lambda x: x["name"])
             await state.update_data(units=sorted_units, user_id=account['id'])
             await message.answer(f'Привет, {message.from_user.full_name}! \n\n'
-                                 f'Я - Aida. Помогая удаленно управлять рестораном или сетью ресторанов'
+                                 f'Я - Aida. Помогая удаленно управлять рестораном или сетью ресторанов '
                                  f'Dodo Brands и принимать правильные управленческие решения',
                                  reply_markup=KeyStart.type_order)
             await States.types.set()
         else:
             await cleaner.delete_message(mess)
             await message.answer(f'Привет, {message.from_user.full_name}\n\n'
-                                 f'Я - Aida. Помогая удаленно управлять рестораном или сетью ресторанов '
+                                 f'Я - Aida. Помогаю удаленно управлять рестораном или сетью ресторанов '
                                  f'Dodo Brands и принимать правильные управленческие решения\n'
                                  f'Авторизуйтесь на странице приложения в маркетплейсе\n'
                                  f'https://marketplace.dodois.io/apps/11ECF3AAF97D059CB9706F21406EBD44')
@@ -241,19 +241,24 @@ async def live_functions(call: types.CallbackQuery, callback_data: dict):
     cleaner = Clean()
     await cleaner.delete_message(call.message)
     if callback == 'metrics':
-        await call.answer('Подождите, отчет собирается')
         orders = await db.select_orders_metrics(pool, 'metrics', str(call.from_user.id))
-        for order in orders:
-            await command_metrics(order, db, pool)
-        await call.message.answer(f'Выбери интересующее действие:', reply_markup=KeyLive.data_type)
-        await States.command.set()
+        if orders:
+            await call.answer('Подождите, отчет собирается')
+            for order in orders:
+                await command_metrics(order, db, pool)
+            await call.message.answer(f'Выбери интересующее действие:', reply_markup=KeyLive.data_type)
+            await States.command.set()
+        else:
+            await call.answer('Вы не подписаны в метриках, ни на одну из пиццерий.')
     else:
-        await call.answer('Подождите, отчет собирается')
         orders = await db.select_orders_metrics(pool, 'revenue', str(call.from_user.id))
-        for order in orders:
-            await command_revenue(order, db, pool)
-        await call.message.answer(f'Выбери интересующее действие:', reply_markup=KeyLive.data_type)
-        await States.command.set()
+        if orders:
+            for order in orders:
+                await command_revenue(order, db, pool)
+            await call.answer('Подождите, отчет собирается')
+            await call.message.answer(f'Выбери интересующее действие:', reply_markup=KeyLive.data_type)
+            await States.command.set()
+        await call.answer('Вы не подписаны в выручке, ни на одну из пиццерий.')
     await pool.close()
 
 

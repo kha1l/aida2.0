@@ -33,7 +33,7 @@ async def order_certs(data, access, dt_start, dt_end, chat):
                 trip = order['tripOrdersCount']
                 delivery = order['handedOverToDeliveryAt'].split('.')[0]
                 order_delivery = datetime.strptime(delivery, '%Y-%m-%dT%H:%M:%S').replace(tzinfo=pytz.UTC)
-                order_delivery = order_delivery + timedelta(hours=data[3])
+                order_delivery = order_delivery + timedelta(hours=int(data[3]))
                 predict = f'Да \U0001F534'
                 if order['predictedDeliveryTime'] > order['deliveryTime']:
                     predict = f'Нет‚ \U0001F7E2'

@@ -44,9 +44,12 @@ async def command_revenue(order, db, pool):
     total_rev, total_perc = await change_revenue(total_today, total_week)
     data.append((f'\n<b>Итого:</b>', total_rev, total_perc))
     max_name_length = max(len(item[0]) for item in data)
+    max_value = max(len(item[1]) for item in data)
+    max_perc = max(len(item[2]) for item in data)
     for item in data:
         name, value, percentage = item
-        message += "{:<{}} {} ({})".format(name, max_name_length, value, percentage) + '\n'
+        message += "{:<{}} | {:<{}} | {:<{}}".format(name, max_name_length, value, max_value,
+                                                     percentage, max_perc) + '\n'
     await send.sending(order["chat_id"], message, logger, order['id'])
 
 
