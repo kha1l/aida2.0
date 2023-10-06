@@ -11,7 +11,7 @@ async def stops_rest():
     send = Send(db=db)
     logger = Log('CHANNEL')
     ch_type = {
-        'Takeaway': '\U0001F6B6 Самовывоз', '\U0001F697 Delivery': 'Доставка', '\U0001F6CE Dine-in': 'Ресторан'
+        'Takeaway': '\U0001F6B6 Самовывоз', 'Delivery': '\U0001F697 Доставка', 'Dine-in': '\U0001F6CE Ресторан'
     }
     orders = await db.select_orders(pool, 'stops_rest')
     for order in orders:
