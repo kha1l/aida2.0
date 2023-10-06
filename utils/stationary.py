@@ -12,11 +12,18 @@ class Units:
     async def get_units(self, access):
         logger = Log("UNITS")
         conn = Connect()
+        type_concept = {
+            'dodopizza': '',
+            'doner42': 'doner.',
+            'drinkit': 'drinkit.'
+        }
         try:
             access_units = await conn.get_units(access=access)
             if access_units:
+                concept = access_units[0]['businessId']
                 code = countries.get(access_units[0]['countryCode']).alpha2.lower()
-                units_all = await conn.get_public_api(f'https://publicapi.dodois.io/{code}/api/v1/unitinfo/all')
+                units_all = await conn.get_public_api(f'https://publicapi.{type_concept[concept]}dodois.io/'
+                                                      f'{code}/api/v1/unitinfo/all')
                 for units in units_all:
                     for unit in access_units:
                         if unit['id'].upper() == units['UUId'] and units['Type'] == 1 and units['State'] == 1:

@@ -9,7 +9,7 @@ from aiogram.dispatcher import FSMContext
 from authorization.users import Users, DataUser
 from bot.keyboard import KeyStart, KeyTypes, KeyRest, KeySettings, KeyOut, KeyStats, KeyLive, KeyHide
 from bot.states import States
-from utils.update import update_tokens_app, update_subs
+from utils.update import update_tokens_app, update_subs, update_subs_day
 from functions.birthday import send_birthday
 from functions.refusal import send_refusal
 from functions.metrics import send_metrics, command_metrics
@@ -20,24 +20,24 @@ from functions.staff import send_staff
 from functions.tickets import send_tickets
 from functions.stock import send_stock
 from functions.stops import stops_rest, stops_sector, stops_ings, stops_key_ings
-from datetime import datetime
+from datetime import datetime, timedelta
 
 
-# Config.scheduler.add_job(update_subs_day, 'cron', day_of_week='*', hour=17, minute=0)
-Config.scheduler.add_job(update_tokens_app, 'cron', day_of_week="*", hour=11, minute=26)
-Config.scheduler.add_job(send_stock, 'cron', day_of_week="*", hour=18, minute=25)
-Config.scheduler.add_job(send_birthday, 'cron', day_of_week="*", hour='0-23', minute=20)
-Config.scheduler.add_job(send_metrics, 'cron', day_of_week="*", hour='0-23', minute=0)
-Config.scheduler.add_job(send_couriers, 'cron', day_of_week="*", hour='0-23', minute=38)
-Config.scheduler.add_job(send_staff, 'cron', day_of_week="*", hour='0-23', minute=29)
-Config.scheduler.add_job(send_stationary, 'cron', day_of_week="*", hour='0-23', minute=40)
-Config.scheduler.add_job(send_revenue, 'cron', day_of_week="*", hour='0-23', minute=30)
-Config.scheduler.add_job(send_refusal, 'cron', day_of_week="*", hour='0-23', minute=15)
-Config.scheduler.add_job(stops_key_ings, 'interval', minutes=10, start_date=datetime(2023, 10, 5, 17, 24, 0))
-Config.scheduler.add_job(stops_ings, 'interval', minutes=10, start_date=datetime(2023, 10, 5, 17, 27, 0))
-Config.scheduler.add_job(stops_rest, 'interval', minutes=10, start_date=datetime(2023, 10, 5, 17, 30, 0))
-Config.scheduler.add_job(stops_sector, 'interval', minutes=5, start_date=datetime(2023, 10, 5, 17, 33, 0))
-Config.scheduler.add_job(send_tickets, 'interval', minutes=10, start_date=datetime(2023, 10, 5, 17, 35, 0))
+Config.scheduler.add_job(update_subs_day, 'cron', day_of_week='*', hour=15, minute=14)
+# Config.scheduler.add_job(update_tokens_app, 'cron', day_of_week="*", hour=14, minute=43)
+# Config.scheduler.add_job(send_stock, 'cron', day_of_week="*", hour=18, minute=25)
+# Config.scheduler.add_job(send_birthday, 'cron', day_of_week="*", hour='0-23', minute=20)
+# Config.scheduler.add_job(send_metrics, 'cron', day_of_week="*", hour='0-23', minute=0)
+# Config.scheduler.add_job(send_couriers, 'cron', day_of_week="*", hour='0-23', minute=38)
+# Config.scheduler.add_job(send_staff, 'cron', day_of_week="*", hour='0-23', minute=29)
+# Config.scheduler.add_job(send_stationary, 'cron', day_of_week="*", hour='0-23', minute=40)
+# Config.scheduler.add_job(send_revenue, 'cron', day_of_week="*", hour='0-23', minute=30)
+# Config.scheduler.add_job(send_refusal, 'cron', day_of_week="*", hour='0-23', minute=15)
+# Config.scheduler.add_job(stops_key_ings, 'interval', minutes=10, start_date=datetime(2023, 10, 5, 17, 24, 0))
+# Config.scheduler.add_job(stops_ings, 'interval', minutes=10, start_date=datetime(2023, 10, 5, 17, 27, 0))
+# Config.scheduler.add_job(stops_rest, 'interval', minutes=10, start_date=datetime(2023, 10, 5, 17, 30, 0))
+# Config.scheduler.add_job(stops_sector, 'interval', minutes=5, start_date=datetime(2023, 10, 6, 10, 51, 0))
+# Config.scheduler.add_job(send_tickets, 'interval', minutes=10, start_date=datetime(2023, 10, 5, 17, 35, 0))
 
 
 @Config.dp.message_handler(CommandStart(), state=['*'])
@@ -84,12 +84,16 @@ async def start_func(message: types.Message, state: FSMContext):
             for units in access_units:
                 reach = await db.check_stationary(pool, units['uuid'])
                 if reach:
+                    minutes = reach['timezone'] * 60 - 180
+                    dt = ((datetime.now().replace(minute=0, second=0, microsecond=0)) + timedelta(
+                        minutes=minutes)).date()
+                    dt = datetime.strftime(dt, '%Y-%m-%d')
                     if units['user_id'] not in reach['user_id']:
                         await db.update_stationary(pool, units)
                     else:
                         if reach['expires'] != units['expires'] \
                                 or reach['subs'] != units['subs']:
-                            await db.update_stationary_sub_and_expires(pool, units)
+                            await db.update_stationary_sub_and_expires(pool, units, reach['id'], dt)
                 else:
                     await db.add_stationary(pool, units)
             sorted_units = sorted(access_units, key=lambda x: x["name"])
@@ -361,7 +365,6 @@ async def audit_file(message: types.Message):
         await States.pizza.set()
     else:
         await message.answer(f'Это должен быть xlsx файл. Попробуйте прислать еще раз')
-
 
 
 @Config.dp.callback_query_handler(KeyRest.callback_rest.filter(), state=States.pizza)

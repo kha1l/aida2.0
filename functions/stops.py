@@ -16,7 +16,7 @@ async def stops_rest():
     orders = await db.select_orders(pool, 'stops_rest')
     for order in orders:
         minutes = order['timezone'] * 60 - 180
-        created_before = datetime.now() - timedelta(minutes=minutes)
+        created_before = datetime.now() + timedelta(minutes=minutes)
         dt_end = datetime.strftime(created_before, '%Y-%m-%dT%H:%M:%S')
         created_after = created_before - timedelta(minutes=10)
         dt_start = datetime.strftime(created_after, '%Y-%m-%dT%H:%M:%S')
@@ -61,11 +61,11 @@ async def stops_sector():
     logger = Log('SECTOR')
     send = Send(db=db)
     orders = await db.select_orders(pool, 'stops_sector')
+    created_before = datetime.now() - timedelta(minutes=185)
+    dt_end = datetime.strftime(created_before, '%Y-%m-%dT%H:%M:%S')
+    created_after = created_before - timedelta(minutes=5)
+    dt_start = datetime.strftime(created_after, '%Y-%m-%dT%H:%M:%S')
     for order in orders:
-        created_before = datetime.now() - timedelta(minutes=185)
-        dt_end = datetime.strftime(created_before, '%Y-%m-%dT%H:%M:%S')
-        created_after = created_before - timedelta(minutes=5)
-        dt_start = datetime.strftime(created_after, '%Y-%m-%dT%H:%M:%S')
         for i in range(0, len(order["uuid"]), 29):
             batch = order["uuid"][i:i + 29]
             uuids = ','.join(batch)
@@ -88,15 +88,17 @@ async def stops_sector():
                                   f'<b>{sector} в {rest}</b>\n' \
                                   f'Время остановки: {time_tm.time()}\n'
                         await send.sending(order["chat_id"], message, logger, order['id'])
-                    if sc['endedAt'] is not None and sc['endedAt'] != '':
-                        dt_tm = datetime.strptime(sc['endedAt'], '%Y-%m-%dT%H:%M:%S')
-                        time_tm = dt_tm + timedelta(hours=order['timezone'])
-                        rest = sc['unitName']
-                        sector = sc['sectorName']
-                        message = f'\U0001F7E2 Возобновление сектора\n\n' \
-                                  f'<b>{sector} в {rest}</b>\n' \
-                                  f'Время возобновления: {time_tm.time()}\n'
-                        await send.sending(order["chat_id"], message, logger, order['id'])
+                    if sc['endedAt'] is not None and sc['endedAt']:
+                        end_date = datetime.strptime(sc['endedAt'], '%Y-%m-%dT%H:%M:%S')
+                        if end_date <= created_before:
+                            dt_tm = datetime.strptime(sc['endedAt'], '%Y-%m-%dT%H:%M:%S')
+                            time_tm = dt_tm + timedelta(hours=order['timezone'])
+                            rest = sc['unitName']
+                            sector = sc['sectorName']
+                            message = f'\U0001F7E2 Возобновление сектора\n\n' \
+                                      f'<b>{sector} в {rest}</b>\n' \
+                                      f'Время возобновления: {time_tm.time()}\n'
+                            await send.sending(order["chat_id"], message, logger, order['id'])
             except TypeError as e:
                 logger.error(f'Type ERROR stop_sector - {order["id"]} - {e}')
             except KeyError as e:
@@ -112,7 +114,7 @@ async def stops_ings():
     orders = await db.select_orders(pool, 'stops_ings')
     for order in orders:
         minutes = order['timezone'] * 60 - 180
-        created_before = datetime.now() - timedelta(minutes=minutes)
+        created_before = datetime.now() + timedelta(minutes=minutes)
         dt_end = datetime.strftime(created_before, '%Y-%m-%dT%H:%M:%S')
         created_after = created_before - timedelta(minutes=10)
         dt_start = datetime.strftime(created_after, '%Y-%m-%dT%H:%M:%S')
@@ -173,7 +175,7 @@ async def stops_key_ings():
     orders = await db.select_orders(pool, 'ings')
     for order in orders:
         minutes = order['timezone'] * 60 - 180
-        created_before = datetime.now() - timedelta(minutes=minutes)
+        created_before = datetime.now() + timedelta(minutes=minutes)
         dt_end = datetime.strftime(created_before, '%Y-%m-%dT%H:%M:%S')
         created_after = created_before - timedelta(minutes=10)
         dt_start = datetime.strftime(created_after, '%Y-%m-%dT%H:%M:%S')

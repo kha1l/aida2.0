@@ -7,6 +7,11 @@ from utils.connection import post_api, public_api
 
 async def send_stationary():
     logger = Log('STATIONARY')
+    type_concept = {
+        'dodopizza': '',
+        'doner42': 'doner.',
+        'drinkit': 'drinkit.'
+    }
     db = AsyncDatabase()
     pool = await db.create_pool()
     send = Send(db=db)
@@ -22,7 +27,7 @@ async def send_stationary():
                 handover = await post_api(f'https://api.dodois.io/{order["concept"]}/{order["country"]}/production/orders-handover-time',
                                           order["access"], units=unit, _from=dt_start, to=dt_end)
                 rest_id = await db.get_data_rest(pool, unit)
-                link = f'https://publicapi.dodois.io/{order["country"]}/api/v1/unitinfo/{rest_id["unit_id"]}' \
+                link = f'https://publicapi.{type_concept[order["concept"]]}dodois.io/{order["country"]}/api/v1/unitinfo/{rest_id["unit_id"]}' \
                        f'/dailyrevenue/{created_after.year}/{created_after.month}/{created_after.day}'
                 revenue = await public_api(link)
                 try:

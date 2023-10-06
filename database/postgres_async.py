@@ -107,13 +107,13 @@ class AsyncDatabase:
         params = (unit['uuid'], unit['user_id'], unit['subs'], unit['expires'])
         await self.execute(pool, sql, parameters=params, commit=True)
 
-    async def update_stationary_sub_and_expires(self, pool, unit):
+    async def update_stationary_sub_and_expires(self, pool, unit, id, dt):
         sql = '''
             UPDATE aida_stationary
-            SET subs = $2, expires = $3
-            WHERE uuid = $1;
+            SET subs = $2, expires = $3, date_update = $4
+            WHERE id = $1;
         '''
-        params = (unit['uuid'], unit['subs'], unit['expires'])
+        params = (id, unit['subs'], unit['expires'], dt)
         await self.execute(pool, sql, parameters=params, commit=True)
 
     async def select_stationary(self, pool, id):
@@ -200,7 +200,7 @@ class AsyncDatabase:
 
     async def get_stationary(self, pool):
         sql = '''
-            SELECT id, uuid, user_id FROM aida_stationary
+            SELECT id, uuid, user_id, subs, expires, date_update FROM aida_stationary
         '''
         return await self.execute(pool, sql, fetchall=True)
 

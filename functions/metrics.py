@@ -21,8 +21,13 @@ async def change_revenue(today, week):
 async def command_metrics(order, db, pool):
     logger = Log('metrics')
     send = Send(db=db)
+    type_concept = {
+        'dodopizza': '',
+        'doner42': 'doner.',
+        'drinkit': 'drinkit.'
+    }
     minutes = order['timezone'] * 60 - 180
-    created_before = (datetime.now().replace(minute=0, second=0, microsecond=0)) - timedelta(minutes=minutes)
+    created_before = (datetime.now().replace(minute=0, second=0, microsecond=0)) + timedelta(minutes=minutes)
     dt_end = datetime.strftime(created_before, '%Y-%m-%dT%H:%M:%S')
     created_after = created_before.replace(hour=0)
     dt_start = datetime.strftime(created_after, '%Y-%m-%dT%H:%M:%S')
@@ -41,7 +46,7 @@ async def command_metrics(order, db, pool):
             avg_delivery, shelf, time_rest, cooking = timedelta(0), timedelta(0), timedelta(0), timedelta(0)
             productivity, prod_hour, orders_hour, cert = 0, 0, 0, 0
             rest = await db.get_data_rest(pool, unit)
-            link = f'https://publicapi.dodois.io/{order["country"]}/api/v1/' \
+            link = f'https://publicapi.{type_concept[order["concept"]]}dodois.io/{order["country"]}/api/v1/' \
                    f'OperationalStatisticsForTodayAndWeekBefore/{rest["unit_id"]}'
             revenue = await public_api(link)
             response = await post_api(f'https://api.dodois.io/{order["concept"]}/{order["country"]}'

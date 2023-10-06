@@ -16,7 +16,7 @@ async def send_refusal():
             batch = order["uuid"][i:i + 29]
             uuids = ','.join(batch)
             minutes = order['timezone'] * 60 - 180
-            created_before = (datetime.now().replace(minute=0, second=0, microsecond=0)) - timedelta(minutes=minutes)
+            created_before = (datetime.now().replace(minute=0, second=0, microsecond=0)) + timedelta(minutes=minutes)
             dt_end = datetime.strftime(created_before, '%Y-%m-%dT%H:%M:%S')
             created_after = created_before - timedelta(hours=1)
             dt_start = datetime.strftime(created_after, '%Y-%m-%dT%H:%M:%S')

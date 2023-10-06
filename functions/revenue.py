@@ -22,6 +22,11 @@ async def change_revenue(today, week):
 
 async def command_revenue(order, db, pool):
     logger = Log('revenue')
+    type_concept = {
+        'dodopizza': '',
+        'doner42': 'doner.',
+        'drinkit': 'drinkit.'
+    }
     dt = datetime.now()
     send = Send(db=db)
     dt_for_message = datetime.strftime(dt, '%d.%m')
@@ -30,7 +35,7 @@ async def command_revenue(order, db, pool):
     data = []
     for unit in order["uuid"]:
         rest = await db.get_data_rest(pool, unit)
-        link = f'https://publicapi.dodois.io/{order["country"]}/api/v1/' \
+        link = f'https://publicapi.{type_concept[order["concept"]]}dodois.io/{order["country"]}/api/v1/' \
                f'OperationalStatisticsForTodayAndWeekBefore/{rest["unit_id"]}'
         revenue = await public_api(link)
         today = revenue['today']
