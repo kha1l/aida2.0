@@ -120,7 +120,7 @@ async def send_metrics():
     db = AsyncDatabase()
     pool = await db.create_pool()
     orders = await db.select_orders(pool, 'metrics')
-    hours = [23, 12, 19]
+    hours = [23, 14, 19]
     for order in orders:
         hour = datetime.now().hour - 3 + order['timezone']
         if hour in hours:

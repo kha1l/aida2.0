@@ -23,21 +23,21 @@ from functions.stops import stops_rest, stops_sector, stops_ings, stops_key_ings
 from datetime import datetime, timedelta
 
 
-Config.scheduler.add_job(update_subs_day, 'cron', day_of_week='*', hour=15, minute=14)
-# Config.scheduler.add_job(update_tokens_app, 'cron', day_of_week="*", hour=14, minute=43)
-# Config.scheduler.add_job(send_stock, 'cron', day_of_week="*", hour=18, minute=25)
-# Config.scheduler.add_job(send_birthday, 'cron', day_of_week="*", hour='0-23', minute=20)
-# Config.scheduler.add_job(send_metrics, 'cron', day_of_week="*", hour='0-23', minute=0)
-# Config.scheduler.add_job(send_couriers, 'cron', day_of_week="*", hour='0-23', minute=38)
-# Config.scheduler.add_job(send_staff, 'cron', day_of_week="*", hour='0-23', minute=29)
-# Config.scheduler.add_job(send_stationary, 'cron', day_of_week="*", hour='0-23', minute=40)
-# Config.scheduler.add_job(send_revenue, 'cron', day_of_week="*", hour='0-23', minute=30)
-# Config.scheduler.add_job(send_refusal, 'cron', day_of_week="*", hour='0-23', minute=15)
-# Config.scheduler.add_job(stops_key_ings, 'interval', minutes=10, start_date=datetime(2023, 10, 5, 17, 24, 0))
-# Config.scheduler.add_job(stops_ings, 'interval', minutes=10, start_date=datetime(2023, 10, 5, 17, 27, 0))
-# Config.scheduler.add_job(stops_rest, 'interval', minutes=10, start_date=datetime(2023, 10, 5, 17, 30, 0))
-# Config.scheduler.add_job(stops_sector, 'interval', minutes=5, start_date=datetime(2023, 10, 6, 10, 51, 0))
-# Config.scheduler.add_job(send_tickets, 'interval', minutes=10, start_date=datetime(2023, 10, 5, 17, 35, 0))
+Config.scheduler.add_job(update_subs_day, 'cron', day_of_week='*', hour=16, minute=26)
+Config.scheduler.add_job(update_tokens_app, 'cron', day_of_week="*", hour=16, minute=29)
+Config.scheduler.add_job(send_stock, 'cron', day_of_week="*", hour=10, minute=0)
+Config.scheduler.add_job(send_birthday, 'cron', day_of_week="*", hour='0-23', minute=15)
+Config.scheduler.add_job(send_metrics, 'cron', day_of_week="*", hour='0-23', minute=0)
+Config.scheduler.add_job(send_couriers, 'cron', day_of_week="*", hour='0-23', minute=30)
+Config.scheduler.add_job(send_staff, 'cron', day_of_week="*", hour='0-23', minute=0)
+Config.scheduler.add_job(send_stationary, 'cron', day_of_week="*", hour='0-23', minute=0)
+Config.scheduler.add_job(send_revenue, 'cron', day_of_week="*", hour='0-23', minute=30)
+Config.scheduler.add_job(send_refusal, 'cron', day_of_week="*", hour='0-23', minute=45)
+Config.scheduler.add_job(stops_key_ings, 'interval', minutes=5, start_date=datetime(2023, 10, 6, 18, 40, 0))
+Config.scheduler.add_job(stops_ings, 'interval', minutes=5, start_date=datetime(2023, 10, 6, 18, 42, 0))
+Config.scheduler.add_job(stops_rest, 'interval', minutes=5, start_date=datetime(2023, 10, 6, 18, 44, 0))
+Config.scheduler.add_job(stops_sector, 'interval', minutes=5, start_date=datetime(2023, 10, 6, 18, 46, 0))
+Config.scheduler.add_job(send_tickets, 'interval', minutes=5, start_date=datetime(2023, 10, 6, 18, 48, 0))
 
 
 @Config.dp.message_handler(CommandStart(), state=['*'])
@@ -64,17 +64,20 @@ async def start_func(message: types.Message, state: FSMContext):
             for units in access_units:
                 reach = await db.check_stationary(pool, units['uuid'])
                 if reach:
+                    minutes = reach['timezone'] * 60 - 180
+                    dt = ((datetime.now().replace(minute=0, second=0, microsecond=0)) + timedelta(
+                        minutes=minutes)).date()
                     if reach['subs'] != units['subs'] or reach['expires'] != units['expires'] \
                             or units['user_id'] not in reach['user_id']:
-                        await db.update_stationary(pool, units)
+                        await db.update_stationary(pool, units, reach['id'], dt)
                 else:
-                    await db.add_stationary(pool, units)
+                    await db.add_stationary(pool, units, 'None')
             sorted_units = sorted(access_units, key=lambda x: x["name"])
             await state.update_data(units=sorted_units, user_id=record['id'])
             await cleaner.delete_message(mess)
             await message.answer(f'Привет, {message.from_user.full_name}! \n\n'
                                  f'Я - Aida. Помогаю удаленно управлять рестораном или сетью ресторанов '
-                                 f'Dodo Brands и принимать правильные управленческие решения',
+                                 f'Dodo Brands и принимать правильные управленческие решения.',
                                  reply_markup=KeyStart.type_order)
             await States.types.set()
 
@@ -89,19 +92,19 @@ async def start_func(message: types.Message, state: FSMContext):
                         minutes=minutes)).date()
                     dt = datetime.strftime(dt, '%Y-%m-%d')
                     if units['user_id'] not in reach['user_id']:
-                        await db.update_stationary(pool, units)
+                        await db.update_stationary(pool, units, reach['id'], dt)
                     else:
                         if reach['expires'] != units['expires'] \
                                 or reach['subs'] != units['subs']:
                             await db.update_stationary_sub_and_expires(pool, units, reach['id'], dt)
                 else:
-                    await db.add_stationary(pool, units)
+                    await db.add_stationary(pool, units, 'None')
             sorted_units = sorted(access_units, key=lambda x: x["name"])
             await state.update_data(units=sorted_units, user_id=account['id'])
             await cleaner.delete_message(mess)
             await message.answer(f'Привет, {message.from_user.full_name}! \n\n'
                                  f'Я - Aida. Помогаю удаленно управлять рестораном или сетью ресторанов '
-                                 f'Dodo Brands и принимать правильные управленческие решения',
+                                 f'Dodo Brands и принимать правильные управленческие решения.',
                                  reply_markup=KeyStart.type_order)
             await States.types.set()
     else:
@@ -115,14 +118,14 @@ async def start_func(message: types.Message, state: FSMContext):
             await state.update_data(units=sorted_units, user_id=account['id'])
             await message.answer(f'Привет, {message.from_user.full_name}! \n\n'
                                  f'Я - Aida. Помогая удаленно управлять рестораном или сетью ресторанов '
-                                 f'Dodo Brands и принимать правильные управленческие решения',
+                                 f'Dodo Brands и принимать правильные управленческие решения.',
                                  reply_markup=KeyStart.type_order)
             await States.types.set()
         else:
             await cleaner.delete_message(mess)
             await message.answer(f'Привет, {message.from_user.full_name}\n\n'
                                  f'Я - Aida. Помогаю удаленно управлять рестораном или сетью ресторанов '
-                                 f'Dodo Brands и принимать правильные управленческие решения\n'
+                                 f'Dodo Brands и принимать правильные управленческие решения.\n'
                                  f'Авторизуйтесь на странице приложения в маркетплейсе\n'
                                  f'https://marketplace.dodois.io/apps/11ECF3AAF97D059CB9706F21406EBD44')
     await pool.close()
@@ -253,16 +256,21 @@ async def live_functions(call: types.CallbackQuery, callback_data: dict):
             await call.message.answer(f'Выбери интересующее действие:', reply_markup=KeyLive.data_type)
             await States.command.set()
         else:
-            await call.answer('Вы не подписаны в метриках, ни на одну из пиццерий.')
+            await call.message.answer('Вы не подписаны в метриках, ни на одну из пиццерий.',
+                                      reply_markup=KeyLive.data_type)
+            await States.command.set()
     else:
         orders = await db.select_orders_metrics(pool, 'revenue', str(call.from_user.id))
         if orders:
+            await call.answer('Подождите, отчет собирается')
             for order in orders:
                 await command_revenue(order, db, pool)
-            await call.answer('Подождите, отчет собирается')
             await call.message.answer(f'Выбери интересующее действие:', reply_markup=KeyLive.data_type)
             await States.command.set()
-        await call.answer('Вы не подписаны в выручке, ни на одну из пиццерий.')
+        else:
+            await call.message.answer('Вы не подписаны в выручке, ни на одну из пиццерий.',
+                                      reply_markup=KeyLive.data_type)
+            await States.command.set()
     await pool.close()
 
 
@@ -274,16 +282,19 @@ async def subscribe(call: types.CallbackQuery, callback_data: dict, state: FSMCo
     if callback != 'operation':
         subs = {}
         data = await state.get_data()
-        for item in data["units"]:
-            sub = item['subs']
-            uuid = item['uuid']
-            if sub in subs:
-                subs[sub].append(uuid)
-            else:
-                subs[sub] = [uuid]
-        dict_name = {}
-        for unit in data['units']:
-            dict_name[unit['uuid']] = unit['name']
+        try:
+            for item in data["units"]:
+                sub = item['subs']
+                uuid = item['uuid']
+                if sub in subs:
+                    subs[sub].append(uuid)
+                else:
+                    subs[sub] = [uuid]
+            dict_name = {}
+            for unit in data['units']:
+                dict_name[unit['uuid']] = unit['name']
+        except KeyError:
+            dict_name = {}
         key = KeyTypes(callback_data['type'], subs)
         state_now = await state.get_state()
         await key.set_key()
@@ -332,7 +343,7 @@ async def stationary(call: types.CallbackQuery, callback_data: dict, state: FSMC
         tz = 3
         concept = 'dodopizza'
     state_now = await state.get_state()
-    orders = await db.get_orders(pool, str(call.message.chat.id), callback_data['order'], code, tz)
+    orders = await db.get_orders(pool, str(call.message.chat.id), callback_data['order'], code, tz, concept)
     if orders:
         in_orders = True
         units_order = orders['uuid']
@@ -393,11 +404,11 @@ async def stationary(call: types.CallbackQuery, callback_data: dict, state: FSMC
         await cleaner.delete_markup(call)
         await cleaner.delete_message(call.message)
         if unit_add:
-            await call.message.answer(f"\U00002705 Вы подключили уведомления о {func_name[data['order']]} "
+            await call.message.answer(f"\U00002705 Вы подключили уведомления: {func_name[data['order']]} "
                                       f"из следующих заведений: \n"
                                       f"{', '.join(str(r) for r in unit_add)}")
         if unit_del:
-            await call.message.answer(f"\U0000274C Вы отключили уведомления о "
+            await call.message.answer(f"\U0000274C Вы отключили уведомления: "
                                       f"{func_name[data['order']]} из следующих заведений: \n"
                                       f"{', '.join(str(r) for r in unit_del)}")
         if data['in_orders']:
@@ -439,9 +450,9 @@ async def back_work(call: types.CallbackQuery, state: FSMContext):
             await state.update_data(stc='States:types')
             await States.rest.set()
         else:
-            await call.message.answer(f'Привет, {call.message.from_user.full_name}! \n\n'
-                                      f'Я - Aida. Присылаю мгновенные уведомления о стопах, тикетах, '
-                                      f'днях рождения, отказах, ключевых метриках и отчетов по курьерам',
+            await call.message.answer(f'Привет, {call.from_user.full_name}! \n\n'
+                                      f'Я - Aida. Помогаю удаленно управлять рестораном или сетью ресторанов '
+                                      f'Dodo Brands и принимать правильные управленческие решения.',
                                       reply_markup=KeyStart.type_order)
             await States.types.set()
     except KeyError:
@@ -449,9 +460,9 @@ async def back_work(call: types.CallbackQuery, state: FSMContext):
             await call.message.answer(f'Настройки приложения: \U0001F9BE', reply_markup=KeySettings.setting)
             await States.settings.set()
         else:
-            await call.message.answer(f'Привет, {call.message.from_user.full_name}! \n\n'
-                                      f'Я - Aida. Присылаю мгновенные уведомления о стопах, тикетах, '
-                                      f'днях рождения, отказах, ключевых метриках и отчетов по курьерам',
+            await call.message.answer(f'Привет, {call.from_user.full_name}! \n\n'
+                                      f'Я - Aida. Помогаю удаленно управлять рестораном или сетью ресторанов '
+                                      f'Dodo Brands и принимать правильные управленческие решения.',
                                       reply_markup=KeyStart.type_order)
             await States.types.set()
 

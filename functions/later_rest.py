@@ -24,7 +24,7 @@ async def order_later_rest(data, access, dt_start, dt_end, chat):
                 if rest == '':
                     rest = over['unitName']
                 number = over['orderNumber']
-                time_order = over['orderTrackingStartAt'].split('T')[1].split('.')[0]
+                time_order = (over['orderTrackingStartAt'].split('T')[1].split('.')[0]).replace('Z', '')
                 track = timedelta(seconds=over['trackingPendingTime'])
                 cooking = timedelta(seconds=over['cookingTime'])
                 source = dict_source[over['orderSource']]

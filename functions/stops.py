@@ -11,14 +11,14 @@ async def stops_rest():
     send = Send(db=db)
     logger = Log('CHANNEL')
     ch_type = {
-        'Takeaway': 'Самовывоз', 'Delivery': 'Доставка', 'Dine-in': 'Ресторан'
+        'Takeaway': '\U0001F6B6 Самовывоз', '\U0001F697 Delivery': 'Доставка', '\U0001F6CE Dine-in': 'Ресторан'
     }
     orders = await db.select_orders(pool, 'stops_rest')
     for order in orders:
         minutes = order['timezone'] * 60 - 180
         created_before = datetime.now() + timedelta(minutes=minutes)
         dt_end = datetime.strftime(created_before, '%Y-%m-%dT%H:%M:%S')
-        created_after = created_before - timedelta(minutes=10)
+        created_after = created_before - timedelta(minutes=5)
         dt_start = datetime.strftime(created_after, '%Y-%m-%dT%H:%M:%S')
         for i in range(0, len(order["uuid"]), 29):
             batch = order["uuid"][i:i + 29]
@@ -116,7 +116,7 @@ async def stops_ings():
         minutes = order['timezone'] * 60 - 180
         created_before = datetime.now() + timedelta(minutes=minutes)
         dt_end = datetime.strftime(created_before, '%Y-%m-%dT%H:%M:%S')
-        created_after = created_before - timedelta(minutes=10)
+        created_after = created_before - timedelta(minutes=5)
         dt_start = datetime.strftime(created_after, '%Y-%m-%dT%H:%M:%S')
         for i in range(0, len(order["uuid"]), 29):
             batch = order["uuid"][i:i + 29]
@@ -164,7 +164,7 @@ async def stops_key_ings():
         "Соус Чесночный ранч", "Томаты свежие", "Цыпленок филе",
         "Чеснок сухой", "Шампиньоны свежие", "Тортилья пшеничная 25см",
         "Добрый Кола 0,33", "Добрый Кола 0,5", "Маффин Три шоколада",
-        "Соус Сырный порционный", "Чизкейк", "Коробка 25", "Коробка 30",
+        "Соус Сырный порционный", "Чизкейк Нью-Йорк", "Коробка 25", "Коробка 30",
         "Коробка 35", "Стакан для кофе 250мл", "Стакан для кофе 300мл",
         "Стакан для кофе 400мл"
     ]
@@ -172,12 +172,12 @@ async def stops_key_ings():
     pool = await db.create_pool()
     logger = Log('INGS')
     send = Send(db=db)
-    orders = await db.select_orders(pool, 'ings')
+    orders = await db.select_orders(pool, 'stops_key_ings')
     for order in orders:
         minutes = order['timezone'] * 60 - 180
         created_before = datetime.now() + timedelta(minutes=minutes)
         dt_end = datetime.strftime(created_before, '%Y-%m-%dT%H:%M:%S')
-        created_after = created_before - timedelta(minutes=10)
+        created_after = created_before - timedelta(minutes=5)
         dt_start = datetime.strftime(created_after, '%Y-%m-%dT%H:%M:%S')
         for i in range(0, len(order["uuid"]), 29):
             batch = order["uuid"][i:i + 29]
@@ -195,7 +195,7 @@ async def stops_key_ings():
                         rest = ing['unitName']
                         stop_ing = ing['ingredientName']
                         if stop_ing in ings:
-                            message = f'\U0001F534 Остановка продаж\n\n' \
+                            message = f'\U0001F534 Стоп ключевого ингредиента\n\n' \
                                       f'<b>{stop_ing} в {rest}</b>\n' \
                                       f'Причина: {reason}\n' \
                                       f'Время остановки: {tm[1]}\n'

@@ -35,7 +35,7 @@ async def send_birthday():
     orders = await db.select_orders(pool, 'birthday')
     for order in orders:
         hour = datetime.now().hour - 3 + order['timezone']
-        if hour == 18:
+        if hour == 9:
             dt = datetime.now().date()
             for i in range(0, len(order['uuid']), 29):
                 batch = order['uuid'][i:i + 29]

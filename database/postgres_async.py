@@ -11,7 +11,7 @@ class AsyncDatabase:
         return await asyncpg.create_pool(dsn=self.dsn)
 
     @staticmethod
-    async def execute(pool, sql: str, parameters: tuple = None, fetchone=False, fetchall=False, commit=False):
+    async def execute(pool, sql: str, parameters: tuple = None, fetchone=False, fetchall=False):
         if not parameters:
             parameters = tuple()
 
@@ -33,7 +33,7 @@ class AsyncDatabase:
             ($1, $2, $3, $4) RETURNING id
         '''
         params = (user_id, username, name, sub)
-        return await self.execute(pool, sql, parameters=params, commit=True, fetchone=True)
+        return await self.execute(pool, sql, parameters=params, fetchone=True)
 
     async def add_person(self, pool, id, person):
         sql = '''
@@ -42,14 +42,14 @@ class AsyncDatabase:
         '''
         params = (id, person.name, person.email, person.phone, person.given_name,
                   person.middle_name, person.family_name, person.concept, person.country)
-        await self.execute(pool, sql, parameters=params, commit=True)
+        await self.execute(pool, sql, parameters=params)
 
     async def add_tokens(self, pool, id, access, refresh):
         sql = '''
             INSERT INTO aida_tokens (user_id, access, refresh) VALUES ($1, $2, $3)
         '''
         params = (id, access, refresh)
-        await self.execute(pool, sql, parameters=params, commit=True)
+        await self.execute(pool, sql, parameters=params)
 
     async def check_auth(self, pool, user_id):
         sql = '''
@@ -77,16 +77,17 @@ class AsyncDatabase:
             UPDATE aida_tokens SET access = $1, refresh = $2 WHERE id = $3
         '''
         params = (access, refresh, id)
-        await self.execute(pool, sql, parameters=params, commit=True)
+        await self.execute(pool, sql, parameters=params)
 
-    async def add_stationary(self, pool, unit):
+    async def add_stationary(self, pool, unit, dt):
         sql = '''
-            INSERT INTO aida_stationary (name, uuid, unit_id, country_code, timezone, user_id, subs, expires, concept)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            INSERT INTO aida_stationary (name, uuid, unit_id, country_code, timezone, user_id, subs, expires, concept,
+            date_update)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
         '''
         params = (unit['name'], unit['uuid'], unit['id'], unit['code'], unit['tz'], [unit['user_id']],
-                  unit['subs'], unit['expires'], unit['concept'])
-        await self.execute(pool, sql, parameters=params, commit=True)
+                  unit['subs'], unit['expires'], unit['concept'], dt)
+        await self.execute(pool, sql, parameters=params)
 
     async def check_stationary(self, pool, uuid):
         sql = '''
@@ -95,17 +96,17 @@ class AsyncDatabase:
         params = (uuid,)
         return await self.execute(pool, sql, parameters=params, fetchone=True)
 
-    async def update_stationary(self, pool, unit):
+    async def update_stationary(self, pool, unit, id, dt):
         sql = '''
             UPDATE aida_stationary
             SET 
                 user_id = array_append(user_id, $2),
-                subs = $3, expires = $4
+                subs = $3, expires = $4, date_update = $5
             WHERE
-                uuid = $1;
+                id = $1;
         '''
-        params = (unit['uuid'], unit['user_id'], unit['subs'], unit['expires'])
-        await self.execute(pool, sql, parameters=params, commit=True)
+        params = (id, unit['user_id'], unit['subs'], unit['expires'], dt)
+        await self.execute(pool, sql, parameters=params)
 
     async def update_stationary_sub_and_expires(self, pool, unit, id, dt):
         sql = '''
@@ -114,7 +115,7 @@ class AsyncDatabase:
             WHERE id = $1;
         '''
         params = (id, unit['subs'], unit['expires'], dt)
-        await self.execute(pool, sql, parameters=params, commit=True)
+        await self.execute(pool, sql, parameters=params)
 
     async def select_stationary(self, pool, id):
         sql = '''
@@ -145,12 +146,12 @@ class AsyncDatabase:
         params = (group,)
         return await self.execute(pool, sql, parameters=params, fetchall=True)
 
-    async def get_orders(self, pool, chat, post, country, tz):
+    async def get_orders(self, pool, chat, post, country, tz, concept):
         sql = '''
             SELECT id, uuid FROM aida_orders WHERE chat_id = $1 and post = $2 
-            and country = $3 and timezone = $4
+            and country = $3 and timezone = $4 and concept = $5
         '''
-        params = (chat, post, country, tz)
+        params = (chat, post, country, tz, concept)
         return await self.execute(pool, sql, parameters=params, fetchone=True)
 
     async def add_order(self, pool, post, uuid, user, chat, country, tz, concept):
@@ -159,21 +160,21 @@ class AsyncDatabase:
             VALUES ($1, $2, $3, $4, $5, $6, $7)
         '''
         params = (post, uuid, user, chat, country, tz, concept)
-        await self.execute(pool, sql, parameters=params, commit=True)
+        await self.execute(pool, sql, parameters=params)
 
     async def update_order(self, pool, uuid, id):
         sql = '''
             UPDATE aida_orders SET uuid = $1 WHERE id = $2
         '''
         params = (uuid, id)
-        await self.execute(pool, sql, parameters=params, commit=True)
+        await self.execute(pool, sql, parameters=params)
 
     async def drop_order(self, pool, id):
         sql = '''
             DELETE FROM aida_orders WHERE id = $1
         '''
         params = (id, )
-        await self.execute(pool, sql, parameters=params, commit=True)
+        await self.execute(pool, sql, parameters=params)
 
     async def delete_user(self, pool, token_id):
         sql = '''
@@ -182,14 +183,14 @@ class AsyncDatabase:
             (SELECT user_id FROM aida_tokens WHERE id = $1);
         '''
         params = (token_id, )
-        await self.execute(pool, sql, parameters=params, commit=True)
+        await self.execute(pool, sql, parameters=params)
 
     async def remove_order(self, pool, chat, post):
         sql = '''
             DELETE FROM aida_orders WHERE chat_id = $1 AND post = $2
         '''
         params = (chat, post)
-        await self.execute(pool, sql, parameters=params, commit=True)
+        await self.execute(pool, sql, parameters=params)
 
     async def get_subs(self, pool, chat):
         sql = '''

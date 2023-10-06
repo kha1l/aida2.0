@@ -21,7 +21,7 @@ async def update_subs(**kwargs):
                     minutes=minutes)).date()
                 dt = datetime.strftime(dt, '%Y-%m-%d')
                 if units['user_id'] not in reach['user_id']:
-                    await db.update_stationary(pool, units)
+                    await db.update_stationary(pool, units,  reach['id'], dt)
                 else:
                     if reach['expires'] != units['expires'] \
                             or reach['subs'] != units['subs']:
@@ -29,7 +29,7 @@ async def update_subs(**kwargs):
                         await db.update_stationary_sub_and_expires(pool, units, reach['id'], dt)
             else:
                 add_units.append(units['name'])
-                await db.add_stationary(pool, units)
+                await db.add_stationary(pool, units, 'None')
         await pool.close()
         return add_units, upd_units
     except KeyError:

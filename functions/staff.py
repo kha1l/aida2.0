@@ -49,7 +49,7 @@ async def work_staff(request, order, dt, db):
                 name = member['firstName']
                 lastname = member['lastName']
                 message = f'{when_hired} годовщина работы в {rest}\n' \
-                          f'<b>{lastname} {name}</b> \U0001F33B\n' \
+                          f'<b>{lastname} {name}</b> \U0001F4BC\n' \
                           f'{staff}, ' \
                           f'Стаж:  {hire}\n'
                 await send.sending(order['chat_id'], message, logger, order['id'])
@@ -66,7 +66,7 @@ async def send_staff():
     orders = await db.select_orders(pool, 'staff')
     for order in orders:
         hour = datetime.now().hour - 3 + order['timezone']
-        if hour == 18:
+        if hour == 9:
             dt = datetime.now().date()
             for i in range(0, len(order['uuid']), 29):
                 batch = order['uuid'][i:i + 29]

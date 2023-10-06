@@ -10,13 +10,13 @@ async def change_revenue(today, week):
         perc = round((today * 100 / week) - 100)
     except ZeroDivisionError:
         perc = 0
-    formatted = '{:,}'.format(int(today)).replace(',', ' ')
+    formatted = '<b>{:,}</b>'.format(int(today)).replace(',', ' ')
     if perc > 0:
-        perc = f'+<b>{perc}%</b>'
+        perc = f'+{perc}%'
     elif perc == 0:
-        perc = f'<b>{perc}%</b>'
+        perc = f'{perc}%'
     else:
-        perc = f'<b>{perc}%</b> \U0001F53B'
+        perc = f'{perc}% \U0001F53B'
     return formatted, perc
 
 
@@ -48,13 +48,9 @@ async def command_revenue(order, db, pool):
         data.append((rest["name"], rev, f'{perc}'))
     total_rev, total_perc = await change_revenue(total_today, total_week)
     data.append((f'\n<b>Итого:</b>', total_rev, total_perc))
-    max_name_length = max(len(item[0]) for item in data)
-    max_value = max(len(item[1]) for item in data)
-    max_perc = max(len(item[2]) for item in data)
     for item in data:
         name, value, percentage = item
-        message += "{:<{}} | {:<{}} | {:<{}}".format(name, max_name_length, value, max_value,
-                                                     percentage, max_perc) + '\n'
+        message += "{:} | {:} | {:}".format(name, value, percentage) + '\n'
     await send.sending(order["chat_id"], message, logger, order['id'])
 
 
@@ -62,7 +58,7 @@ async def send_revenue():
     db = AsyncDatabase()
     pool = await db.create_pool()
     orders = await db.select_orders(pool, 'revenue')
-    hours = [23, 12]
+    hours = [23, 16]
     for order in orders:
         hour = datetime.now().hour - 3 + order['timezone']
         if hour in hours:
