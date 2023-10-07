@@ -23,8 +23,8 @@ from functions.stops import stops_rest, stops_sector, stops_ings, stops_key_ings
 from datetime import datetime, timedelta
 
 
-Config.scheduler.add_job(update_subs_day, 'cron', day_of_week='*', hour=16, minute=26)
-Config.scheduler.add_job(update_tokens_app, 'cron', day_of_week="*", hour=16, minute=29)
+Config.scheduler.add_job(update_subs_day, 'cron', day_of_week='*', hour=16, minute=0)
+Config.scheduler.add_job(update_tokens_app, 'cron', day_of_week="*", hour=15, minute=0)
 Config.scheduler.add_job(send_stock, 'cron', day_of_week="*", hour=10, minute=0)
 Config.scheduler.add_job(send_birthday, 'cron', day_of_week="*", hour='0-23', minute=15)
 Config.scheduler.add_job(send_metrics, 'cron', day_of_week="*", hour='0-23', minute=0)
@@ -33,11 +33,11 @@ Config.scheduler.add_job(send_staff, 'cron', day_of_week="*", hour='0-23', minut
 Config.scheduler.add_job(send_stationary, 'cron', day_of_week="*", hour='0-23', minute=0)
 Config.scheduler.add_job(send_revenue, 'cron', day_of_week="*", hour='0-23', minute=30)
 Config.scheduler.add_job(send_refusal, 'cron', day_of_week="*", hour='0-23', minute=45)
-Config.scheduler.add_job(stops_key_ings, 'interval', minutes=5, start_date=datetime(2023, 10, 6, 18, 40, 0))
-Config.scheduler.add_job(stops_ings, 'interval', minutes=5, start_date=datetime(2023, 10, 6, 18, 42, 0))
-Config.scheduler.add_job(stops_rest, 'interval', minutes=5, start_date=datetime(2023, 10, 6, 18, 44, 0))
-Config.scheduler.add_job(stops_sector, 'interval', minutes=5, start_date=datetime(2023, 10, 6, 18, 46, 0))
-Config.scheduler.add_job(send_tickets, 'interval', minutes=5, start_date=datetime(2023, 10, 6, 18, 48, 0))
+Config.scheduler.add_job(stops_key_ings, 'interval', minutes=5, start_date=datetime(2023, 10, 7, 14, 30, 0))
+Config.scheduler.add_job(stops_ings, 'interval', minutes=5, start_date=datetime(2023, 10, 7, 14, 32, 0))
+Config.scheduler.add_job(stops_rest, 'interval', minutes=5, start_date=datetime(2023, 10, 7, 14, 34, 0))
+Config.scheduler.add_job(stops_sector, 'interval', minutes=5, start_date=datetime(2023, 10, 7, 14, 36, 0))
+Config.scheduler.add_job(send_tickets, 'interval', minutes=5, start_date=datetime(2023, 10, 7, 14, 38, 0))
 
 
 @Config.dp.message_handler(CommandStart(), state=['*'])
@@ -67,9 +67,10 @@ async def start_func(message: types.Message, state: FSMContext):
                     minutes = reach['timezone'] * 60 - 180
                     dt = ((datetime.now().replace(minute=0, second=0, microsecond=0)) + timedelta(
                         minutes=minutes)).date()
+                    dt_str = datetime.strftime(dt, '%Y-%m-%d')
                     if reach['subs'] != units['subs'] or reach['expires'] != units['expires'] \
                             or units['user_id'] not in reach['user_id']:
-                        await db.update_stationary(pool, units, reach['id'], dt)
+                        await db.update_stationary(pool, units, reach['id'], dt_str)
                 else:
                     await db.add_stationary(pool, units, 'None')
             sorted_units = sorted(access_units, key=lambda x: x["name"])
@@ -90,13 +91,13 @@ async def start_func(message: types.Message, state: FSMContext):
                     minutes = reach['timezone'] * 60 - 180
                     dt = ((datetime.now().replace(minute=0, second=0, microsecond=0)) + timedelta(
                         minutes=minutes)).date()
-                    dt = datetime.strftime(dt, '%Y-%m-%d')
+                    dt_str = datetime.strftime(dt, '%Y-%m-%d')
                     if units['user_id'] not in reach['user_id']:
-                        await db.update_stationary(pool, units, reach['id'], dt)
+                        await db.update_stationary(pool, units, reach['id'], dt_str)
                     else:
                         if reach['expires'] != units['expires'] \
                                 or reach['subs'] != units['subs']:
-                            await db.update_stationary_sub_and_expires(pool, units, reach['id'], dt)
+                            await db.update_stationary_sub_and_expires(pool, units, reach['id'], dt_str)
                 else:
                     await db.add_stationary(pool, units, 'None')
             sorted_units = sorted(access_units, key=lambda x: x["name"])
@@ -407,10 +408,11 @@ async def stationary(call: types.CallbackQuery, callback_data: dict, state: FSMC
             await call.message.answer(f"\U00002705 Вы подключили уведомления: {func_name[data['order']]} "
                                       f"из следующих заведений: \n"
                                       f"{', '.join(str(r) for r in unit_add)}")
-        if unit_del:
-            await call.message.answer(f"\U0000274C Вы отключили уведомления: "
-                                      f"{func_name[data['order']]} из следующих заведений: \n"
-                                      f"{', '.join(str(r) for r in unit_del)}")
+        else:
+            if unit_del:
+                await call.message.answer(f"\U0000274C Вы отключили уведомления: "
+                                          f"{func_name[data['order']]} из следующих заведений: \n"
+                                          f"{', '.join(str(r) for r in unit_del)}")
         if data['in_orders']:
             id_order = data['id_order']
             if data['orders']:

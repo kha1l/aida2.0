@@ -121,6 +121,7 @@ async def pyrus_auth():
             except ContentTypeError:
                 return {}
 
+
 async def pyrus_api(url, access, *args):
     headers = {
         "Authorization": f'Bearer {access}',

@@ -19,14 +19,14 @@ async def update_subs(**kwargs):
                 minutes = reach['timezone'] * 60 - 180
                 dt = ((datetime.now().replace(minute=0, second=0, microsecond=0)) + timedelta(
                     minutes=minutes)).date()
-                dt = datetime.strftime(dt, '%Y-%m-%d')
+                dt_str = datetime.strftime(dt, '%Y-%m-%d')
                 if units['user_id'] not in reach['user_id']:
-                    await db.update_stationary(pool, units,  reach['id'], dt)
+                    await db.update_stationary(pool, units,  reach['id'], dt_str)
                 else:
                     if reach['expires'] != units['expires'] \
                             or reach['subs'] != units['subs']:
                         upd_units.append(units['name'])
-                        await db.update_stationary_sub_and_expires(pool, units, reach['id'], dt)
+                        await db.update_stationary_sub_and_expires(pool, units, reach['id'], dt_str)
             else:
                 add_units.append(units['name'])
                 await db.add_stationary(pool, units, 'None')

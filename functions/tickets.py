@@ -20,8 +20,12 @@ async def send_tickets():
     dt_end = datetime.strftime(dt, '%Y-%m-%dT%H:%M:%S')
     for country in cfg.catalogs:
         value = cfg.catalogs[country]
-        catalogs = await pyrus_api(f'https://api.pyrus.com/v4/catalogs/{value["CatalogId"]}',
-                                   token['access_token'])
+        try:
+            catalogs = await pyrus_api(f'https://api.pyrus.com/v4/catalogs/{value["CatalogId"]}',
+                                       token['access_token'])
+        except KeyError:
+            catalogs = {}
+            logger.error(f'ERROR for token in - {country}')
         try:
             for catalog in catalogs['items']:
                 if country == 'by' or country == 'uk':
@@ -43,8 +47,11 @@ async def send_tickets():
             "created_before": dt_end + 'Z',
             "fld198": item_id
         }
-        pyrus = await pyrus_api(f'https://api.pyrus.com/v4/forms/{form_id["FormId"]}/register',
-                                token['access_token'], data)
+        try:
+            pyrus = await pyrus_api(f'https://api.pyrus.com/v4/forms/{form_id["FormId"]}/register',
+                                    token['access_token'], data)
+        except KeyError:
+            pyrus = {}
         try:
             tasks = pyrus['tasks']
         except KeyError:

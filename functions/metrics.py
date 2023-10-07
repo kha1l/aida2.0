@@ -51,7 +51,7 @@ async def command_metrics(order, db, pool):
             revenue = await public_api(link)
             response = await post_api(f'https://api.dodois.io/{order["concept"]}/{order["country"]}'
                                       f'/production/orders-handover-time',
-                                      order["access"], units=uuids, _from=dt_start, to=dt_end)
+                                      order["access"], units=unit, _from=dt_start, to=dt_end)
             try:
                 for order_hand in response['ordersHandoverTime']:
                     if order_hand['salesChannel'] == 'Dine-in':
