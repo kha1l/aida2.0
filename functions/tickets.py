@@ -16,7 +16,7 @@ async def send_tickets():
     orders = await db.select_orders(pool, 'tickets')
     dict_catalog = {}
     dt = datetime.now(timezone.utc)
-    dt_start = datetime.strftime(dt - timedelta(minutes=10), '%Y-%m-%dT%H:%M:%S')
+    dt_start = datetime.strftime(dt - timedelta(minutes=5), '%Y-%m-%dT%H:%M:%S')
     dt_end = datetime.strftime(dt, '%Y-%m-%dT%H:%M:%S')
     for country in cfg.catalogs:
         value = cfg.catalogs[country]
