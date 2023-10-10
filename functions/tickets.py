@@ -12,10 +12,8 @@ class Ticket:
     type_order, number_order, grade = '', 0, 0
     dt, tm = '', ''
 
-
     async def get_ticket_all(self, fields):
-        for field in fields:
-            pass
+        pass
 
     async def get_ticket_ru_kz(self, fields):
         for field in fields:
@@ -95,6 +93,7 @@ class Ticket:
                                 pass
                             except IndexError:
                                 pass
+
 
 async def work_tickets(order, token, form, catalogs, dt_start, dt_end):
     data_catalog = []
@@ -191,7 +190,8 @@ async def send_tickets():
         except KeyError:
             logger.error(f'ERROR for catalog in - {country}')
     for order in orders:
-        form_id = cfg.catalogs_ru[order['country']]
-        message = await work_tickets(order, token, form_id, dict_catalog, dt_start, dt_end)
-        await send.sending(order['chat_id'], message, logger, order['id'])
+        if order['country'] == 'ru' or order['country'] == 'kz':
+            form_id = cfg.catalogs_ru[order['country']]
+            message = await work_tickets(order, token, form_id, dict_catalog, dt_start, dt_end)
+            await send.sending(order['chat_id'], message, logger, order['id'])
     await pool.close()

@@ -9,6 +9,7 @@ from aiogram.dispatcher import FSMContext
 from authorization.users import Users, DataUser
 from bot.keyboard import KeyStart, KeyTypes, KeyRest, KeySettings, KeyOut, KeyStats, KeyLive, KeyHide
 from bot.states import States
+from utils.connection import get_audit
 from utils.update import update_tokens_app, update_subs, update_subs_day
 from functions.birthday import send_birthday
 from functions.refusal import send_refusal
@@ -18,17 +19,19 @@ from functions.couriers import get_orders, send_couriers
 from functions.stationary import send_stationary
 from functions.staff import send_staff
 from functions.tickets import send_tickets
-from functions.stock import send_stock
+from functions.stock_functions.stock import send_stock
+from functions.stock_functions.work_stock import application_stock
+from functions.stock_functions.reader_stock import read_file_audit
 from functions.stops import stops_rest, stops_sector, stops_ings, stops_key_ings
 from datetime import datetime, timedelta
 
 
 # Config.scheduler.add_job(update_subs_day, 'cron', day_of_week='*', hour=15, minute=15)
 # Config.scheduler.add_job(update_tokens_app, 'cron', day_of_week="*", hour=15, minute=18)
-# Config.scheduler.add_job(send_stock, 'cron', day_of_week="*", hour=10, minute=0)
+Config.scheduler.add_job(send_stock, 'cron', day_of_week="*", hour=3, minute=24)
 # Config.scheduler.add_job(send_birthday, 'cron', day_of_week="*", hour='0-23', minute=15)
 # Config.scheduler.add_job(send_metrics, 'cron', day_of_week="*", hour='0-23', minute=0)
-Config.scheduler.add_job(send_couriers, 'cron', day_of_week="*", hour='0-23', minute=24)
+# Config.scheduler.add_job(send_couriers, 'cron', day_of_week="*", hour='0-23', minute=24)
 # Config.scheduler.add_job(send_staff, 'cron', day_of_week="*", hour='0-23', minute=0)
 # Config.scheduler.add_job(send_stationary, 'cron', day_of_week="*", hour='0-23', minute=0)
 # Config.scheduler.add_job(send_revenue, 'cron', day_of_week="*", hour='0-23', minute=30)
@@ -38,6 +41,7 @@ Config.scheduler.add_job(send_couriers, 'cron', day_of_week="*", hour='0-23', mi
 # Config.scheduler.add_job(stops_rest, 'interval', minutes=5, start_date=datetime(2023, 10, 7, 14, 34, 0))
 # Config.scheduler.add_job(stops_sector, 'interval', minutes=5, start_date=datetime(2023, 10, 7, 14, 36, 0))
 # Config.scheduler.add_job(send_tickets, 'interval', minutes=5, start_date=datetime(2023, 10, 7, 14, 38, 0))
+# Config.scheduler.add_job(application_stock, 'cron', day_of_week="*", hour=2, minute=6)
 
 
 @Config.dp.message_handler(CommandStart(), state=['*'])
@@ -315,7 +319,7 @@ async def stops_menu(call: types.CallbackQuery, state: FSMContext):
     await cleaner.delete_markup(call)
     await key.set_stops()
     await cleaner.delete_message(call.message)
-    await state.update_data(key=key)
+    await state.update_data(key=key, stc='States:rest')
     await call.message.answer(f'Стопы', reply_markup=key.stops)
     await States.stops.set()
 
@@ -345,38 +349,88 @@ async def stationary(call: types.CallbackQuery, callback_data: dict, state: FSMC
         concept = 'dodopizza'
     state_now = await state.get_state()
     orders = await db.get_orders(pool, str(call.message.chat.id), callback_data['order'], code, tz, concept)
+    access_stock = await db.get_units_stock(pool)
+    units_stock = []
+    for stock in access_stock:
+        units_stock.append(stock['unit'])
     if orders:
         in_orders = True
         units_order = orders['uuid']
         id_order = orders['id']
     unit_add, unit_del = [], []
-    await key_rest.set_rest(callback_data['order'], data['units'], units_order, subs_dict)
-    await call.message.answer(f'Выбери заведения:', reply_markup=key_rest.rest)
+    if callback_data['order'] == 'stock':
+        await key_rest.set_rest(callback_data['order'], data['units'], units_order, subs_dict,
+                                units_stock=units_stock)
+        await call.message.answer(f'Выбери заведения:\n'
+                                  f'ВАЖНО! Чтобы пользоваться данной '
+                                  f'подпиской необходимо внести файл или файлы заведений с последней '
+                                  f'ревизией нажав на кнопку "\U0001F4DA Внести файлы месячной ревизии"',
+                                  reply_markup=key_rest.rest)
+    else:
+        await key_rest.set_rest(callback_data['order'], data['units'], units_order, subs_dict)
+        await call.message.answer(f'Выбери заведения:', reply_markup=key_rest.rest)
     await state.update_data(orders=units_order, key=key, order=callback_data['order'],
                             subs_dict=subs_dict, unit_del=unit_del, unit_add=unit_add,
                             code=code, tz=tz, in_orders=in_orders, id_order=id_order,
-                            stc=state_now, concept=concept)
+                            stc=state_now, concept=concept, stock=units_stock)
     await pool.close()
     await States.pizza.set()
 
 
 @Config.dp.callback_query_handler(text="audit", state=States.pizza)
 async def audit(call: types.CallbackQuery):
-    await call.message.answer(f"Пришлите мне файл с последней месячной ревизии в заведении")
+    cleaner = Clean()
+    await cleaner.delete_markup(call)
+    await cleaner.delete_message(call.message)
+    await call.answer()
+    await call.message.answer(f"Пришлите мне файлы или файл с последней месячной ревизии в заведении")
     await States.audit.set()
 
 
 @Config.dp.message_handler(content_types=['document'], state=States.audit)
-async def audit_file(message: types.Message):
+async def audit_file(message: types.Message, state: FSMContext):
     cleaner = Clean()
+    cfg = Config()
+    unit_name = {}
+    callback = await state.get_data()
+    name = callback['name']
+    key_rest = KeyRest()
+    for unit in name:
+        unit_name[name[unit]] = unit
     await cleaner.delete_message(message)
     file_name = message.document.file_name
     if file_name.endswith('.xlsx'):
-        print(message.document.file_id)
-        await message.answer(f'Файл успешно загружен')
-        await States.pizza.set()
+        file_id = message.document.file_id
+        file_info = await cfg.bot.get_file(file_id)
+        file_url = f"https://api.telegram.org/file/bot{cfg.token}/{file_info.file_path}"
+        file = await get_audit(file_url)
+        await message.answer(f'Собираем данные, пожалуйста подождите')
+        rest_name = await read_file_audit(file, unit_name, callback['user_id'], callback['code'],
+                                          callback['concept'])
+        if rest_name:
+            stock = callback['stock']
+            stock.append(rest_name)
+            await key_rest.set_rest(callback['order'], callback['units'], callback['orders'], callback['subs_dict'],
+                                    units_stock=stock)
+            await message.answer(f'Данные по ревизии в заведении {rest_name} добавлены!\n'
+                                 f'Вам доступна подписка на данный ресторан. \U00002705\n'
+                                 f'Вы должны будете прислать новый файл после следующей ревизии.',
+                                 reply_markup=key_rest.rest)
+            await States.pizza.set()
+        else:
+            stock = callback['stock']
+            await key_rest.set_rest(callback['order'], callback['units'], callback['orders'], callback['subs_dict'],
+                                    units_stock=stock)
+            await message.answer(f'Упс, что то пошло не так. Проверьте файл ревизии в заведении. \U0000274C',
+                                 reply_markup=key_rest.rest)
+            await States.pizza.set()
     else:
-        await message.answer(f'Это должен быть xlsx файл. Попробуйте прислать еще раз')
+        stock = callback['stock']
+        await key_rest.set_rest(callback['order'], callback['units'], callback['orders'], callback['subs_dict'],
+                                units_stock=stock)
+        await message.answer(f'Это должен быть <b>xlsx</b> файл. Попробуйте прислать еще раз',
+                             reply_markup=key_rest.rest)
+        await States.pizza.set()
 
 
 @Config.dp.callback_query_handler(KeyRest.callback_rest.filter(), state=States.pizza)
@@ -395,8 +449,11 @@ async def stationary(call: types.CallbackQuery, callback_data: dict, state: FSMC
             orders.append(uuid)
             unit_add.append(data['name'][uuid])
         key = KeyRest()
-        await key.set_rest(data['order'], data['units'], orders, data['subs_dict'])
-        await state.update_data(orders=orders, unit_add=unit_add, unit_del=unit_del)
+        if data['order'] == 'stock':
+            await key.set_rest(data['order'], data['units'], orders, data['subs_dict'], units_stock=data['stock'])
+        else:
+            await key.set_rest(data['order'], data['units'], orders, data['subs_dict'])
+        await state.update_data(orders=orders, unit_add=unit_add, unit_del=unit_del, stock=data['stock'])
         await cleaner.edit_markup(call, key.rest)
     else:
         db = AsyncDatabase()
@@ -462,6 +519,7 @@ async def back_work(call: types.CallbackQuery, state: FSMContext):
             await call.message.answer(f'Настройки приложения: \U0001F9BE', reply_markup=KeySettings.setting)
             await States.settings.set()
         else:
+            await cleaner.delete_message(call.message)
             await call.message.answer(f'Привет, {call.from_user.full_name}! \n\n'
                                       f'Я - Aida. Помогаю удаленно управлять рестораном или сетью ресторанов '
                                       f'Dodo Brands и принимать правильные управленческие решения.',

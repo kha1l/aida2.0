@@ -143,3 +143,15 @@ async def pyrus_api(url, access, *args):
                     return response
                 except ContentTypeError:
                     return {}
+
+
+async def get_audit(url):
+    logger = Log('CONNECT')
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url) as resp:
+            try:
+                response = await resp.read()
+                return response
+            except ContentTypeError:
+                logger.error(f"ERROR get_audit - {response}")
+                return {}

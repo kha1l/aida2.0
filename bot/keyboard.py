@@ -127,22 +127,38 @@ class KeyRest:
     def __init__(self):
         self.rest = InlineKeyboardMarkup(row_width=2)
 
-    async def set_rest(self, call, units, orders, subs_dict):
+    async def set_rest(self, call, units, orders, subs_dict, **kwargs):
+        if kwargs:
+            access_unit_stock = kwargs['units_stock']
+        else:
+            access_unit_stock = []
         for unit in units:
             value = subs_dict[unit['subs']]
             if call in value:
-                if unit['uuid'] in orders:
-                    em = f'\U00002705'
+                if call == 'stock':
+                    if unit['name'] in access_unit_stock:
+                        if unit['uuid'] in orders:
+                            em = f'\U00002705'
+                        else:
+                            em = f'☑️'
+                        button = InlineKeyboardButton(
+                            text=f"{em} {unit['name']}",
+                            callback_data=self.callback_rest.new(unit=unit['uuid'])
+                        )
+                        self.rest.insert(button)
                 else:
-                    em = f'☑️'
-                button = InlineKeyboardButton(
-                    text=f"{em} {unit['name']}",
-                    callback_data=self.callback_rest.new(unit=unit['uuid'])
-                )
-                self.rest.insert(button)
+                    if unit['uuid'] in orders:
+                        em = f'\U00002705'
+                    else:
+                        em = f'☑️'
+                    button = InlineKeyboardButton(
+                        text=f"{em} {unit['name']}",
+                        callback_data=self.callback_rest.new(unit=unit['uuid'])
+                    )
+                    self.rest.insert(button)
         if call == 'stock':
             audit = InlineKeyboardButton(
-                text=f'\U0001F4DA Внести файл месячной ревизии',
+                text=f'\U0001F4DA Внести файлы месячной ревизии',
                 callback_data='audit'
             )
             self.rest.add(audit)

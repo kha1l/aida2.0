@@ -26,10 +26,10 @@ class Config:
     dp = Dispatcher(bot, storage=MemoryStorage())
     scheduler = AsyncIOScheduler({'apscheduler.timezone': 'Europe/Moscow', 'apscheduler.job_defaults.max_instances': 4})
     catalogs_all = {
-        # "by": {
-        #     "FormId": 824654,
-        #     "CatalogId": 30499,
-        # },
+        "by": {
+            "FormId": 824654,
+            "CatalogId": 30499,
+        },
         "ro": {
             "FormId": 831570,
             "CatalogId": 90866

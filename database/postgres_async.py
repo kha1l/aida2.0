@@ -242,3 +242,52 @@ class AsyncDatabase:
         '''
         params = (user, )
         return await self.execute(pool, sql, parameters=params, fetchone=True)
+
+    async def drop_items(self, pool, uuid):
+        sql = '''
+            DELETE FROM aida_stock WHERE uuid = $1
+        '''
+        params = (uuid, )
+        await self.execute(pool, sql, parameters=params)
+
+    async def add_stock_items(self, pool, uuid, unit, item, meas, quantity, dt, user, code, concept):
+        sql = '''
+            INSERT INTO aida_stock (uuid, name, unit, quantity, measurement, date_order, user_id,
+            code, concept)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        '''
+        params = (uuid, item, unit, quantity, meas, dt, user, code, concept)
+        await self.execute(pool, sql, parameters=params)
+
+    async def get_units_stock(self, pool):
+        sql = '''
+            SELECT DISTINCT unit
+            FROM aida_stock;
+        '''
+        return await self.execute(pool, sql, fetchall=True)
+
+    async def get_units_stock_user(self, pool):
+        sql = '''
+            SELECT DISTINCT uuid, user_id, date_order, concept, code
+            FROM aida_stock;
+        '''
+        return await self.execute(pool, sql, fetchall=True)
+
+    async def update_items(self, pool, items, quantity, dt, avg):
+        sql = '''
+            UPDATE aida_stock
+            SET quantity = aida_stock.quantity + $3, date_order = $4, avgconsum = $5
+            WHERE name = $1 and uuid = $2;
+        '''
+        params = (items[0], items[1], quantity, dt, avg)
+        await self.execute(pool, sql, parameters=params)
+
+    async def select_items(self, pool, uuids):
+        placeholders = ', '.join(['$' + str(i) for i in range(1, len(uuids) + 1)])
+        sql = f'''
+            SELECT name, unit, quantity, avgconsum, measurement
+            FROM aida_stock
+            WHERE aida_stock.uuid IN ({placeholders});
+        '''
+        params = (*uuids, )
+        return await self.execute(pool, sql, parameters=params, fetchall=True)
