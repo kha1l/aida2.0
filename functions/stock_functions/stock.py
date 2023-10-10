@@ -24,34 +24,18 @@ async def send_stock():
             meas = item['measurement']
             if avg_value:
                 if value <= avg_value:
-                    try:
-                        delta_value = value / avg_value
-                    except ZeroDivisionError:
-                        delta_value = 0
-                    if 0.667 < delta_value <= 1:
-                        step = f'3 дня \U000026A0'
-                    elif 0.334 < delta_value <= 0.667:
-                        step = f'2 дня \U00002757'
-                    elif delta_value <= 0.334:
-                        step = f'1 день \U0000203C'
+                    if unit != unit_prev:
+                        message += f'<b>{unit}</b>\n'
+                    message += f'<b>{item_name}</b> заканчивается запас!! \U000026A0\n'
+                    unit_prev = unit
+                    if meas == 'шт':
+                        value = int(value)
                     else:
-                        step = f'не осталось в запасах'
-                    if step == 'не осталось в запасах':
-                        if unit != unit_prev:
-                            message += f'<b>{unit}</b>\n'
-                        message += f'<b>{unit}:</b>\n<b>{item_name} {step}</b> \U0001F198\n'
-                        unit_prev = unit
-                    else:
-                        if meas == 'шт':
-                            value = int(value)
-                        else:
-                            value = round(value, 2)
-                        if unit != unit_prev:
-                            message += f'<b>{unit}:</b>\n'
-                        message += f'<b>{item_name}</b>\n' \
-                                   f'осталось {value} {meas}\n' \
-                                   f'по прогнозу хватит на {step}\n\n'
-                        unit_prev = unit
-        if message != '\U0001F9C0 Складские остатки на {dt_day}:\n\n':
+                        value = round(value, 2)
+                    message += f'осталось {value} {meas}\n'
+                    if value < 0:
+                        message += f'(проверьте внесен ли приход или корректные ли замеры)\n'
+                    message += f'на 2 дня необходимо {avg_value} {meas}\n\n'
+        if message != f'\U0001F9C0 Складские остатки на {dt_day}:\n\n':
             await send.sending(order["chat_id"], message, logger, order['id'])
     await pool.close()

@@ -24,8 +24,8 @@ async def application_stock():
         else:
             user_units[user] = ([stock['uuid']], [dt], stock['concept'], stock['code'])
     for key, v in user_units.items():
-        skip, skip_cons, skip_cons_avg = 0, 0, 0
-        take, take_cons, take_cons_avg = 1000, 1000, 1000
+        skip, skip_cons, skip_cons_avg, skip_transfers = 0, 0, 0, 0
+        take, take_cons, take_cons_avg, take_transfers = 1000, 1000, 1000, 1000
         tokens = await db.get_tokens(pool, key)
         uuid = ','.join(v[0])
         concept = v[2]
@@ -34,13 +34,10 @@ async def application_stock():
         dt_now = datetime.now().replace(microsecond=0)
         dt_end_avg = dt_now.replace(hour=0, minute=0, second=0)
         dt_end_avg_str = datetime.strftime(dt_end_avg, '%Y-%m-%dT%H:%M:%S')
-        dt_start_avg = datetime.strftime(dt_end_avg - timedelta(days=3), '%Y-%m-%dT%H:%M:%S')
+        dt_start_avg = datetime.strftime(dt_end_avg - timedelta(days=7), '%Y-%m-%dT%H:%M:%S')
         dt_end = datetime.strftime(dt_now, '%Y-%m-%dT%H:%M:%S')
-        dict_items = {}
-        avg_cons_items = {}
-        reach = True
-        reach_cons = True
-        reach_cons_avg = True
+        dict_items, avg_cons_items = {}, {}
+        reach, reach_cons, reach_cons_avg, reach_transfers = True, True, True, True
         while reach:
             response = await post_api(f'https://api.dodois.io/{concept}/{code}/accounting/incoming-stock-items',
                                       tokens['access'], units=uuid, _from=dt_start, to=dt_end,
@@ -48,19 +45,46 @@ async def application_stock():
             skip += take
             try:
                 for item in response['incomingStockItems']:
-                    item_name = item['stockItemName']
+                    item_id = item['stockItemId']
                     unit = item['unitId']
-                    if (item_name, unit) in dict_items:
-                        value = dict_items[(item_name, unit)]
+                    if (item_id, unit) in dict_items:
+                        value = dict_items[(item_id, unit)]
                         value += item['quantity']
-                        dict_items[(item_name, unit)] = value
+                        dict_items[(item_id, unit)] = value
                     else:
-                        dict_items[(item_name, unit)] = item['quantity']
+                        dict_items[(item_id, unit)] = item['quantity']
                 if response['isEndOfListReached']:
                     reach = False
             except Exception as e:
                 reach = False
                 logger.error(f'ERROR app_stock incoming - {e}')
+        while reach_transfers:
+            response = await post_api(f'https://api.dodois.io/{concept}/{code}/accounting/stock-transfers',
+                                      tokens['access'], units=uuid, receivedFrom=dt_start, receivedTo=dt_end,
+                                      skip=skip_transfers, take=take_transfers, statuses='Received')
+            skip_cons += take_cons
+            try:
+                for item in response['transfers']:
+                    item_id = item['stockItemId']
+                    unit_destination = item['destinationUnitId']
+                    unit_origin = item["originUnitId"]
+                    if (item_id, unit_destination) in dict_items:
+                        value = dict_items[(item_id, unit_destination)]
+                        value += item['receivedQuantity']
+                        dict_items[(item_id, unit_destination)] = value
+                    else:
+                        dict_items[(item_id, unit_destination)] = item['receivedQuantity']
+                    if (item_id, unit_origin) in dict_items:
+                        value = dict_items[(item_id, unit_origin)]
+                        value -= item['shippedQuantity']
+                        dict_items[(item_id, unit_origin)] = value
+                    else:
+                        dict_items[(item_id, unit_origin)] = -item['shippedQuantity']
+                if response['isEndOfListReached']:
+                    reach_transfers = False
+            except Exception as e:
+                reach_transfers = False
+                logger.error(f'ERROR app_stock transfers - {e}')
         while reach_cons:
             response = await post_api(f'https://api.dodois.io/{concept}/{code}/accounting/stock-consumptions-by-period',
                                       tokens['access'], units=uuid, _from=dt_start, to=dt_end,
@@ -68,7 +92,7 @@ async def application_stock():
             skip_cons += take_cons
             try:
                 for item in response['consumptions']:
-                    key_dict = (item['stockItemName'], item['unitId'])
+                    key_dict = (item['stockItemId'], item['unitId'])
                     quantity = item['quantity']
                     try:
                         dict_items[key_dict] -= quantity
@@ -86,7 +110,7 @@ async def application_stock():
             skip_cons_avg += take_cons_avg
             try:
                 for item in response['consumptions']:
-                    key_dict = (item['stockItemName'], item['unitId'])
+                    key_dict = (item['stockItemId'], item['unitId'])
                     quantity = item['quantity']
                     if key_dict in avg_cons_items:
                         value = avg_cons_items.get(key_dict)
@@ -100,6 +124,9 @@ async def application_stock():
                 reach_cons_avg = False
                 logger.error(f'ERROR app_stock consumptions_average - {e}')
         for key_item, value_item in dict_items.items():
+            cons = None
             average_cons = avg_cons_items.get(key_item)
-            await db.update_items(pool, key_item, value_item, dt_now, average_cons)
+            if average_cons:
+                cons = round(average_cons / 7 * 2, 2)
+            await db.update_items(pool, key_item, value_item, dt_now, cons)
     await pool.close()

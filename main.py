@@ -28,7 +28,7 @@ from datetime import datetime, timedelta
 
 # Config.scheduler.add_job(update_subs_day, 'cron', day_of_week='*', hour=15, minute=15)
 Config.scheduler.add_job(update_tokens_app, 'cron', day_of_week="*", hour=15, minute=42)
-Config.scheduler.add_job(send_stock, 'cron', day_of_week="*", hour=16, minute=15)
+Config.scheduler.add_job(send_stock, 'cron', day_of_week="*", hour=21, minute=41)
 # Config.scheduler.add_job(send_birthday, 'cron', day_of_week="*", hour='0-23', minute=15)
 # Config.scheduler.add_job(send_metrics, 'cron', day_of_week="*", hour='0-23', minute=0)
 # Config.scheduler.add_job(send_couriers, 'cron', day_of_week="*", hour='0-23', minute=24)
@@ -41,7 +41,7 @@ Config.scheduler.add_job(send_stock, 'cron', day_of_week="*", hour=16, minute=15
 # Config.scheduler.add_job(stops_rest, 'interval', minutes=5, start_date=datetime(2023, 10, 7, 14, 34, 0))
 # Config.scheduler.add_job(stops_sector, 'interval', minutes=5, start_date=datetime(2023, 10, 7, 14, 36, 0))
 # Config.scheduler.add_job(send_tickets, 'interval', minutes=5, start_date=datetime(2023, 10, 7, 14, 38, 0))
-Config.scheduler.add_job(application_stock, 'cron', day_of_week="*", hour=16, minute=45)
+Config.scheduler.add_job(application_stock, 'cron', day_of_week="*", hour=22, minute=2)
 
 
 @Config.dp.message_handler(CommandStart(), state=['*'])
@@ -383,7 +383,8 @@ async def audit(call: types.CallbackQuery):
     await cleaner.delete_markup(call)
     await cleaner.delete_message(call.message)
     await call.answer()
-    await call.message.answer(f"Пришлите мне файлы или файл с последней месячной ревизии в заведении")
+    await call.message.answer(f"Пришлите мне файлы или файл с последней месячной ревизии в заведении\n"
+                              f"(МО - Учет - Остатки по ревизии - Отчет - Отчет v2)")
     await States.audit.set()
 
 
@@ -443,8 +444,9 @@ async def stationary(call: types.CallbackQuery, callback_data: dict, state: FSMC
     unit_add = data['unit_add']
     if uuid != 'commit':
         if uuid in orders:
-            orders.remove(uuid)
-            unit_del.append(data['name'][uuid])
+            if data['order'] != 'stock':
+                orders.remove(uuid)
+                unit_del.append(data['name'][uuid])
         else:
             orders.append(uuid)
             unit_add.append(data['name'][uuid])

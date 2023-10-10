@@ -250,13 +250,13 @@ class AsyncDatabase:
         params = (uuid, )
         await self.execute(pool, sql, parameters=params)
 
-    async def add_stock_items(self, pool, uuid, unit, item, meas, quantity, dt, user, code, concept):
+    async def add_stock_items(self, pool, uuid, unit, item, meas, quantity, dt, user, code, concept, item_id):
         sql = '''
             INSERT INTO aida_stock (uuid, name, unit, quantity, measurement, date_order, user_id,
-            code, concept)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            code, concept, item_id)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
         '''
-        params = (uuid, item, unit, quantity, meas, dt, user, code, concept)
+        params = (uuid, item, unit, quantity, meas, dt, user, code, concept, item_id)
         await self.execute(pool, sql, parameters=params)
 
     async def get_units_stock(self, pool):
@@ -277,7 +277,7 @@ class AsyncDatabase:
         sql = '''
             UPDATE aida_stock
             SET quantity = aida_stock.quantity + $3, date_order = $4, avgconsum = $5
-            WHERE name = $1 and uuid = $2;
+            WHERE item_id = $1 and uuid = $2;
         '''
         params = (items[0], items[1], quantity, dt, avg)
         await self.execute(pool, sql, parameters=params)
