@@ -32,7 +32,9 @@ async def application_stock():
         code = v[3]
         dt_start = datetime.strftime(max(v[1]), '%Y-%m-%dT%H:%M:%S')
         dt_now = datetime.now().replace(microsecond=0)
-        dt_start_avg = datetime.strftime(dt_now - timedelta(days=3), '%Y-%m-%dT%H:%M:%S')
+        dt_end_avg = dt_now.replace(hour=0, minute=0, second=0)
+        dt_end_avg_str = datetime.strftime(dt_end_avg, '%Y-%m-%dT%H:%M:%S')
+        dt_start_avg = datetime.strftime(dt_end_avg - timedelta(days=3), '%Y-%m-%dT%H:%M:%S')
         dt_end = datetime.strftime(dt_now, '%Y-%m-%dT%H:%M:%S')
         dict_items = {}
         avg_cons_items = {}
@@ -71,8 +73,7 @@ async def application_stock():
                     try:
                         dict_items[key_dict] -= quantity
                     except KeyError:
-                        print(key_dict)
-                        pass
+                        dict_items[key_dict] = -quantity
                 if response['isEndOfListReached']:
                     reach_cons = False
             except Exception as e:
@@ -80,7 +81,7 @@ async def application_stock():
                 logger.error(f'ERROR app_stock consumptions - {e}')
         while reach_cons_avg:
             response = await post_api(f'https://api.dodois.io/{concept}/{code}/accounting/stock-consumptions-by-period',
-                                      tokens['access'], units=uuid, _from=dt_start_avg, to=dt_end,
+                                      tokens['access'], units=uuid, _from=dt_start_avg, to=dt_end_avg_str,
                                       skip=skip_cons_avg, take=take_cons_avg)
             skip_cons_avg += take_cons_avg
             try:

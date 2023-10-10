@@ -27,8 +27,8 @@ from datetime import datetime, timedelta
 
 
 # Config.scheduler.add_job(update_subs_day, 'cron', day_of_week='*', hour=15, minute=15)
-# Config.scheduler.add_job(update_tokens_app, 'cron', day_of_week="*", hour=15, minute=18)
-Config.scheduler.add_job(send_stock, 'cron', day_of_week="*", hour=3, minute=24)
+Config.scheduler.add_job(update_tokens_app, 'cron', day_of_week="*", hour=15, minute=42)
+Config.scheduler.add_job(send_stock, 'cron', day_of_week="*", hour=16, minute=15)
 # Config.scheduler.add_job(send_birthday, 'cron', day_of_week="*", hour='0-23', minute=15)
 # Config.scheduler.add_job(send_metrics, 'cron', day_of_week="*", hour='0-23', minute=0)
 # Config.scheduler.add_job(send_couriers, 'cron', day_of_week="*", hour='0-23', minute=24)
@@ -41,7 +41,7 @@ Config.scheduler.add_job(send_stock, 'cron', day_of_week="*", hour=3, minute=24)
 # Config.scheduler.add_job(stops_rest, 'interval', minutes=5, start_date=datetime(2023, 10, 7, 14, 34, 0))
 # Config.scheduler.add_job(stops_sector, 'interval', minutes=5, start_date=datetime(2023, 10, 7, 14, 36, 0))
 # Config.scheduler.add_job(send_tickets, 'interval', minutes=5, start_date=datetime(2023, 10, 7, 14, 38, 0))
-# Config.scheduler.add_job(application_stock, 'cron', day_of_week="*", hour=2, minute=6)
+Config.scheduler.add_job(application_stock, 'cron', day_of_week="*", hour=16, minute=45)
 
 
 @Config.dp.message_handler(CommandStart(), state=['*'])
