@@ -62,7 +62,7 @@ async def application_stock():
             response = await post_api(f'https://api.dodois.io/{concept}/{code}/accounting/stock-transfers',
                                       tokens['access'], units=uuid, receivedFrom=dt_start, receivedTo=dt_end,
                                       skip=skip_transfers, take=take_transfers, statuses='Received')
-            skip_cons += take_cons
+            skip_transfers += take_transfers
             try:
                 for item in response['transfers']:
                     item_id = item['stockItemId']

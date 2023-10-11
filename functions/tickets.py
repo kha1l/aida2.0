@@ -193,5 +193,6 @@ async def send_tickets():
         if order['country'] == 'ru' or order['country'] == 'kz':
             form_id = cfg.catalogs_ru[order['country']]
             message = await work_tickets(order, token, form_id, dict_catalog, dt_start, dt_end)
-            await send.sending(order['chat_id'], message, logger, order['id'])
+            if message:
+                await send.sending(order['chat_id'], message, logger, order['id'])
     await pool.close()

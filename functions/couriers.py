@@ -43,7 +43,7 @@ async def send_couriers():
     dt_start = datetime.strftime(created_after, '%Y-%m-%dT%H:%M:%S')
     for order in orders:
         hour = datetime.now().hour - 3 + order['timezone']
-        if hour == 8:
+        if hour == 11:
             for i in range(0, len(order['uuid']), 29):
                 batch = order['uuid'][i:i + 29]
                 uuids = ','.join(batch)
@@ -156,10 +156,10 @@ async def send_couriers():
                                 logger.error(f'Index ERROR temp - {uuid}')
                             except ZeroDivisionError:
                                 logger.error(f'Zero ERROR temp - {uuid}')
-                        except KeyError:
-                            logger.error(f'Key ERROR weather - {uuid}')
-                        except IndexError:
-                            logger.error(f'Index ERROR weather - {uuid}')
+                        except KeyError as e:
+                            logger.error(f'Key ERROR weather - {uuid} - {e}')
+                        except IndexError as e:
+                            logger.error(f'Index ERROR weather - {uuid} - {e}')
                         try:
                             workload = round(delivery['tripsDuration'] / delivery['couriersShiftsDuration'] * 100, 2)
                         except ZeroDivisionError:

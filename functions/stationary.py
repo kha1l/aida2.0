@@ -22,7 +22,7 @@ async def send_stationary():
     dt_start = datetime.strftime(created_after, '%Y-%m-%dT%H:%M:%S')
     for order in orders:
         hour = datetime.now().hour - 3 + order['timezone']
-        if hour == 10:
+        if hour == 11:
             for unit in order['uuid']:
                 handover = await post_api(f'https://api.dodois.io/{order["concept"]}/{order["country"]}/production/orders-handover-time',
                                           order["access"], units=unit, _from=dt_start, to=dt_end)
