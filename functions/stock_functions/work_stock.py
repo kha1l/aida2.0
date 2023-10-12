@@ -26,6 +26,7 @@ async def application_stock():
     for key, v in user_units.items():
         skip, skip_cons, skip_cons_avg, skip_transfers = 0, 0, 0, 0
         take, take_cons, take_cons_avg, take_transfers = 1000, 1000, 1000, 1000
+        skip_prod, take_prod = 0, 1000
         tokens = await db.get_tokens(pool, key)
         uuid = ','.join(v[0])
         concept = v[2]
@@ -38,6 +39,7 @@ async def application_stock():
         dt_end = datetime.strftime(dt_now, '%Y-%m-%dT%H:%M:%S')
         dict_items, avg_cons_items = {}, {}
         reach, reach_cons, reach_cons_avg, reach_transfers = True, True, True, True
+        reach_prod = True
         while reach:
             response = await post_api(f'https://api.dodois.io/{concept}/{code}/accounting/incoming-stock-items',
                                       tokens['access'], units=uuid, _from=dt_start, to=dt_end,
@@ -58,6 +60,27 @@ async def application_stock():
             except Exception as e:
                 reach = False
                 logger.error(f'ERROR app_stock incoming - {e}')
+        while reach_prod:
+            response = await post_api(f'https://api.dodois.io/{concept}/{code}/accounting/'
+                                      f'semi-finished-products-production',
+                                      tokens['access'], units=uuid, _from=dt_start, to=dt_end,
+                                      skip=skip_prod, take=take_prod)
+            skip_prod += take_prod
+            try:
+                for prod in response['productions']:
+                    prod_id = prod['stockItemId']
+                    unit = prod['unitId']
+                    if (prod_id, unit) in dict_items:
+                        value = dict_items[(prod_id, unit)]
+                        value += prod['quantity']
+                        dict_items[(prod_id, unit)] = value
+                    else:
+                        dict_items[(prod_id, unit)] = prod['quantity']
+                if response['isEndOfListReached']:
+                    reach_prod = False
+            except Exception as e:
+                reach_prod = False
+                logger.error(f'ERROR app_stock productions - {e}')
         while reach_transfers:
             response = await post_api(f'https://api.dodois.io/{concept}/{code}/accounting/stock-transfers',
                                       tokens['access'], units=uuid, receivedFrom=dt_start, receivedTo=dt_end,

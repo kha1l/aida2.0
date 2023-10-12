@@ -26,6 +26,11 @@ async def command_metrics(order, db, pool):
         'doner42': 'doner.',
         'drinkit': 'drinkit.'
     }
+    couriers = [
+        "Dostawca", "Автомобильный", "Пеший",
+        "Велосипедный", "Driver", "Вело курьер", "Kuller oma autoga",
+        "Курьер", "K. Motorine", "Dostawca stażysta", "Nepalez"
+    ]
     minutes = order['timezone'] * 60 - 180
     created_before = (datetime.now().replace(minute=0, second=0, microsecond=0)) + timedelta(minutes=minutes)
     dt_end = datetime.strftime(created_before, '%Y-%m-%dT%H:%M:%S')
@@ -43,12 +48,22 @@ async def command_metrics(order, db, pool):
                                   order["access"], units=uuids, _from=dt_start, to=dt_end, salesChannels='DineIn')
         for unit in order["uuid"]:
             count_stationary = 0
+            staff, courier = 0, 0
             avg_delivery, shelf, time_rest, cooking = timedelta(0), timedelta(0), timedelta(0), timedelta(0)
+            trip = timedelta(0)
             productivity, prod_hour, orders_hour, cert = 0, 0, 0, 0
             rest = await db.get_data_rest(pool, unit)
             link = f'https://publicapi.{type_concept[order["concept"]]}dodois.io/{order["country"]}/api/v1/' \
                    f'OperationalStatisticsForTodayAndWeekBefore/{rest["unit_id"]}'
+            url = (f'https://publicapi.{type_concept[order["concept"]]}dodois.io/{order["country"]}/api/v1/'
+                   f'AllEmployeesOnShift/{rest["unit_id"]}')
             revenue = await public_api(link)
+            employee = await public_api(url)
+            for emp in employee:
+                if emp['ActualCategoryName'] in couriers:
+                    courier += 1
+                else:
+                    staff += 1
             response = await post_api(f'https://api.dodois.io/{order["concept"]}/{order["country"]}'
                                       f'/production/orders-handover-time',
                                       order["access"], units=unit, _from=dt_start, to=dt_end)
@@ -72,6 +87,7 @@ async def command_metrics(order, db, pool):
                         cooking = timedelta(seconds=delivery['avgCookingTime'])
                         shelf = timedelta(seconds=delivery['avgHeatedShelfTime'])
                         cert = delivery['lateOrdersCount']
+                        trip = timedelta(seconds=delivery['avgOrderTripTime'])
                         if cert != 0:
                             cert = f'{cert} \U00002753'
             except KeyError:
@@ -106,7 +122,11 @@ async def command_metrics(order, db, pool):
                       f'Выручка: {rev}\n' \
                       f'Производительность: {int(productivity)}\n' \
                       f'Продуктов на чел/час: {str(prod_hour).replace(".", ",")}\n' \
+                      f'Сотрудники на смене:\n' \
+                      f'        Кухня:        {staff}\n' \
+                      f'        Курьеры:  {courier}\n' \
                       f'Скорость доставки: {avg_delivery}\n' \
+                      f'Среднее время курьера с заказом в пути: {trip}\n' \
                       f'Время на полке: {shelf}\n' \
                       f'Заказов на курьера/час: {str(orders_hour).replace(".", ",")}\n' \
                       f'Сертификаты: {cert}\n' \
