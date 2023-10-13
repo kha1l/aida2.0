@@ -139,14 +139,16 @@ async def work_tickets(order, token, form, catalogs, dt_start, dt_end):
             await tick.get_ticket_ru_kz(fields)
         else:
             await tick.get_ticket_all(fields)
-        if tick.checker or tick.comment or tick.problem:
+        # if tick.checker or tick.comment or tick.problem:
+        if tick.checker or tick.comment:
             try:
                 time_tz = (datetime.strptime(f'{tick.dt} {tick.tm}', '%Y-%m-%d %H:%M') +
                            timedelta(hours=order['timezone']))
                 dt_tz = datetime.strftime(time_tz, '%H:%M %d.%m.%Y')
             except ValueError:
                 dt_tz = ''
-            prb = ', '.join(tick.problem)
+            # prb = ', '.join(tick.problem)
+            prb = ''
             message = f'\U0001F4AC Тикет от клиента\n\n' \
                       f'<b>Оценка: {tick.grade}</b>\n' \
                       f'Заведение: {tick.name}\n' \

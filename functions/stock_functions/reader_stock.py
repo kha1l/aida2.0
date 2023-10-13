@@ -10,6 +10,7 @@ async def read_file_audit(audit, unit_list, user, code, concept):
     db = AsyncDatabase()
     logger = Log('AUDIT')
     pool = await db.create_pool()
+    dt_now = datetime.now()
     try:
         file_io = BytesIO(audit)
         with warnings.catch_warnings(record=True):
@@ -27,7 +28,7 @@ async def read_file_audit(audit, unit_list, user, code, concept):
                 if row[0] != 'ID':
                     quantity = float(row[3].replace(',', '.'))
                     await db.add_stock_items(pool, uuid, unit_name, row[1], row[2], quantity, date_order,
-                                             user, code, concept, row[0].lower())
+                                             user, code, concept, row[0].lower(), dt_now)
             await pool.close()
             return unit_name
         else:

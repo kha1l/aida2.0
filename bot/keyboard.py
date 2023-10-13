@@ -158,7 +158,7 @@ class KeyRest:
                     self.rest.insert(button)
         if call == 'stock':
             audit = InlineKeyboardButton(
-                text=f'\U0001F4DA Внести файлы месячной ревизии',
+                text=f'\U0001F4DA Внести файлы последней ревизии заведения',
                 callback_data='audit'
             )
             self.rest.add(audit)

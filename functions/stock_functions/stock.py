@@ -1,6 +1,7 @@
 from database.postgres_async import AsyncDatabase
 from utils.sending import Send
 from loggs.logger import Log
+from datetime import date
 
 
 async def send_stock():
@@ -9,9 +10,21 @@ async def send_stock():
     send = Send(db=db)
     logger = Log('stock')
     orders = await db.select_orders(pool, 'stock')
+    mess = f'\U0001F4D6 Напоминание\n\n' \
+           f'Прошло 7 дней с момента внесения файла с ревизией. Если за это время была еще ревизия, ' \
+           f'обновите файл с актуальными данными по ревизии в ресторане! \U0001F4D6'
     for order in orders:
         items = await db.select_items(pool, order['uuid'])
         unit_prev = ''
+        dt_now = date.today()
+        try:
+            dt = (items[0]['date_audit']).date()
+        except IndexError:
+            dt = None
+        if dt:
+            day = (dt_now - dt).days
+            if day % 7 == 0:
+                await send.sending(order["chat_id"], mess, logger, order['id'])
         for item in items:
             value = item['quantity']
             avg_value = item['avgconsum']

@@ -250,13 +250,14 @@ class AsyncDatabase:
         params = (uuid, )
         await self.execute(pool, sql, parameters=params)
 
-    async def add_stock_items(self, pool, uuid, unit, item, meas, quantity, dt, user, code, concept, item_id):
+    async def add_stock_items(self, pool, uuid, unit, item, meas, quantity, dt,
+                              user, code, concept, item_id, dt_now):
         sql = '''
             INSERT INTO aida_stock (uuid, name, unit, quantity, measurement, date_order, user_id,
-            code, concept, item_id)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+            code, concept, item_id, date_audit)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
         '''
-        params = (uuid, item, unit, quantity, meas, dt, user, code, concept, item_id)
+        params = (uuid, item, unit, quantity, meas, dt, user, code, concept, item_id, dt_now)
         await self.execute(pool, sql, parameters=params)
 
     async def get_units_stock(self, pool):
@@ -285,7 +286,7 @@ class AsyncDatabase:
     async def select_items(self, pool, uuids):
         placeholders = ', '.join(['$' + str(i) for i in range(1, len(uuids) + 1)])
         sql = f'''
-            SELECT name, unit, quantity, avgconsum, measurement
+            SELECT name, unit, quantity, avgconsum, measurement, date_audit
             FROM aida_stock
             WHERE aida_stock.uuid IN ({placeholders});
         '''
