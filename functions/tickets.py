@@ -98,7 +98,10 @@ class Ticket:
 async def work_tickets(order, token, form, catalogs, dt_start, dt_end):
     data_catalog = []
     for uuid in order['uuid']:
-        data_catalog.append(str(catalogs[uuid.upper()]))
+        try:
+            data_catalog.append(str(catalogs[uuid.upper()]))
+        except KeyError:
+            pass
     item_id = ','.join(data_catalog)
     code = order['country']
     if code == 'ru' or code == 'kz':
