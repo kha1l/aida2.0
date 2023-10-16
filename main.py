@@ -26,9 +26,9 @@ from functions.stops import stops_rest, stops_sector, stops_ings, stops_key_ings
 from datetime import datetime, timedelta
 
 
-Config.scheduler.add_job(update_subs_day, 'cron', day_of_week='*', hour=11, minute=15)
-Config.scheduler.add_job(update_tokens_app, 'cron', day_of_week="*", hour=11, minute=30)
-Config.scheduler.add_job(send_stock, 'cron', day_of_week="*", hour=11, minute=45)
+Config.scheduler.add_job(update_subs_day, 'cron', day_of_week='*', hour=4, minute=15)
+Config.scheduler.add_job(update_tokens_app, 'interval', hours=12)
+Config.scheduler.add_job(send_stock, 'cron', day_of_week="*", hour=8, minute=0)
 Config.scheduler.add_job(send_birthday, 'cron', day_of_week="*", hour='0-23', minute=15)
 Config.scheduler.add_job(send_metrics, 'cron', day_of_week="*", hour='0-23', minute=0)
 Config.scheduler.add_job(send_couriers, 'cron', day_of_week="*", hour='0-23', minute=5)
@@ -36,12 +36,12 @@ Config.scheduler.add_job(send_staff, 'cron', day_of_week="*", hour='0-23', minut
 Config.scheduler.add_job(send_stationary, 'cron', day_of_week="*", hour='0-23', minute=0)
 Config.scheduler.add_job(send_revenue, 'cron', day_of_week="*", hour='0-23', minute=25)
 Config.scheduler.add_job(send_refusal, 'cron', day_of_week="*", hour='0-23', minute=20)
-Config.scheduler.add_job(stops_key_ings, 'interval', minutes=5, start_date=datetime(2023, 10, 11, 11, 0, 0))
-Config.scheduler.add_job(stops_ings, 'interval', minutes=5, start_date=datetime(2023, 10, 11, 11, 2, 0))
-Config.scheduler.add_job(stops_rest, 'interval', minutes=5, start_date=datetime(2023, 10, 11, 11, 4, 0))
-Config.scheduler.add_job(stops_sector, 'interval', minutes=5, start_date=datetime(2023, 10, 11, 11, 6, 0))
-Config.scheduler.add_job(send_tickets, 'interval', minutes=5, start_date=datetime(2023, 10, 11, 11, 8, 0))
-Config.scheduler.add_job(application_stock, 'cron', day_of_week="*", hour=11, minute=10)
+Config.scheduler.add_job(stops_key_ings, 'interval', minutes=5, start_date=datetime(2023, 10, 16, 13, 50, 0))
+Config.scheduler.add_job(stops_ings, 'interval', minutes=5, start_date=datetime(2023, 10, 16, 13, 52, 0))
+Config.scheduler.add_job(stops_rest, 'interval', minutes=5, start_date=datetime(2023, 10, 16, 13, 54, 0))
+Config.scheduler.add_job(stops_sector, 'interval', minutes=5, start_date=datetime(2023, 10, 16, 13, 56, 0))
+Config.scheduler.add_job(send_tickets, 'interval', minutes=5, start_date=datetime(2023, 10, 16, 13, 58, 0))
+Config.scheduler.add_job(application_stock, 'cron', day_of_week="*", hour=6, minute=0)
 
 
 @Config.dp.message_handler(CommandStart(), state=['*'])
@@ -179,14 +179,17 @@ async def call_settings(call: types.CallbackQuery, callback_data: dict, state: F
             if add_units and upd_units:
                 await call.message.answer(f'Обновлены данные у следующих заведений: '
                                           f'{", ".join(str(row) for row in upd_units)}\n\n'
-                                          f'Добавлены следующие заведения: {", ".join(str(row) for row in add_units)}')
+                                          f'Добавлены следующие заведения: {", ".join(str(row) for row in add_units)}\n'
+                                          f'Перегрузите бота при помощи команды /start')
                 await cleaner.delete_message(mess)
             elif add_units:
-                await call.message.answer(f'Добавлены следующие заведения: {", ".join(str(row) for row in add_units)}')
+                await call.message.answer(f'Добавлены следующие заведения: {", ".join(str(row) for row in add_units)}\n'
+                                          f'Перегрузите бота при помощи команды /start')
                 await cleaner.delete_message(mess)
             elif upd_units:
                 await call.message.answer(f'Обновлены данные у следующих заведений: '
-                                          f'{", ".join(str(row) for row in upd_units)}')
+                                          f'{", ".join(str(row) for row in upd_units)}\n'
+                                          f'Перегрузите бота при помощи команды /start')
                 await cleaner.delete_message(mess)
             else:
                 await call.message.answer(f'Изменения не найдены. Попробуйте позднее, возможно данные еще '
@@ -362,9 +365,9 @@ async def stationary(call: types.CallbackQuery, callback_data: dict, state: FSMC
         await key_rest.set_rest(callback_data['order'], data['units'], units_order, subs_dict,
                                 units_stock=units_stock)
         await call.message.answer(f'Выбери заведения:\n'
-                                  f'<b>ВАЖНО!</b> Чтобы пользоваться данной '
+                                  f'ВАЖНО! Чтобы пользоваться данной '
                                   f'подпиской необходимо внести файл или файлы заведений с последней '
-                                  f'ревизией нажав на кнопку "\U0001F4DA Внести файлы последней ревизии заведения"',
+                                  f'ревизией нажав на кнопку "\U0001F4DA Внести файлы месячной ревизии"',
                                   reply_markup=key_rest.rest)
     else:
         await key_rest.set_rest(callback_data['order'], data['units'], units_order, subs_dict)
@@ -447,6 +450,10 @@ async def stationary(call: types.CallbackQuery, callback_data: dict, state: FSMC
             if data['order'] != 'stock':
                 orders.remove(uuid)
                 unit_del.append(data['name'][uuid])
+                try:
+                    unit_add.remove(data['name'][uuid])
+                except ValueError:
+                    pass
         else:
             orders.append(uuid)
             unit_add.append(data['name'][uuid])

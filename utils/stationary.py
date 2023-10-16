@@ -26,7 +26,7 @@ class Units:
                                                       f'{code}/api/v1/unitinfo/all')
                 for units in units_all:
                     for unit in access_units:
-                        if unit['id'].upper() == units['UUId'] and units['Type'] == 1 and units['State'] == 1:
+                        if unit['id'].upper() == units['UUId'] and units['Type'] == 1:
                             await self.config_units((unit['name'], units['Id'], unit['id'], code,
                                                      units['TimeZoneShift'], self.id, unit['businessId']))
                 return self.units
