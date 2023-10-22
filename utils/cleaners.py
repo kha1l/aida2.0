@@ -17,6 +17,8 @@ class Clean:
             await message.delete()
         except MessageNotModified:
             pass
+        except MessageCantBeDeleted:
+            pass
 
     @staticmethod
     async def delete_markup(call):
@@ -32,4 +34,6 @@ class Clean:
         try:
             await call.message.edit_reply_markup(reply_markup=key)
         except MessageNotModified:
+            pass
+        except MessageCantBeDeleted:
             pass
