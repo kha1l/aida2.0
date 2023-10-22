@@ -54,6 +54,6 @@ async def order_later_rest(data, access, dt_start, dt_end, chat):
         message += f'\n\U0001F4F2 <b>Отчет опозданий в ресторан составлен по пиццерии {rest}</b>'
         await send.sending_function(message, chat, logger)
     except TypeError:
-        logger.error(f'Type ERROR later - {handover}')
+        logger.error(f'Type ERROR later - {chat}')
     except KeyError:
-        logger.error(f'Key ERROR later - {handover}')
+        logger.error(f'Key ERROR later - {chat}')

@@ -26,25 +26,25 @@ class Send:
                 await self.cfg.bot.send_message(chat, message)
         except CantParseEntities as e:
             await self.db.drop_order(pool, order_id)
-            logger.error(f'ERROR - {e} - {chat}')
+            logger.error(f'ERROR - {e} - {chat} - {order_id}')
         except BotBlocked as e:
             await self.db.drop_order(pool, order_id)
-            logger.error(f'ERROR - {e} - {chat}')
+            logger.error(f'ERROR - {e} - {chat} - {order_id}')
         except MigrateToChat as e:
             await self.db.drop_order(pool, order_id)
-            logger.error(f'ERROR - {e} - {chat}')
+            logger.error(f'ERROR - {e} - {chat} - {order_id}')
         except BotKicked as e:
             await self.db.drop_order(pool, order_id)
-            logger.error(f'ERROR - {e} - {chat}')
+            logger.error(f'ERROR - {e} - {chat} - {order_id}')
         except ChatNotFound as e:
             await self.db.drop_order(pool, order_id)
-            logger.error(f'ERROR - {e} - {chat}')
+            logger.error(f'ERROR - {e} - {chat} - {order_id}')
         except CantInitiateConversation as e:
             await self.db.drop_order(pool, order_id)
-            logger.error(f'ERROR - {e} - {chat}')
+            logger.error(f'ERROR - {e} - {chat} - {order_id}')
         except Unauthorized as e:
             await self.db.drop_order(pool, order_id)
-            logger.error(f'ERROR - {e} - {chat}')
+            logger.error(f'ERROR - {e} - {chat} - {order_id}')
         await pool.close()
 
     async def sending_function(self, message, chat, logger):
@@ -89,23 +89,23 @@ class Send:
             await self.cfg.bot.send_message(chat, message)
         except CantParseEntities as e:
             await self.db.drop_order(pool, order_id)
-            logger.error(f'ERROR - {e} - {chat}')
+            logger.error(f'ERROR - {e} - {chat} - {order_id}')
         except BotBlocked as e:
             await self.db.drop_order(pool, order_id)
-            logger.error(f'ERROR - {e} - {chat}')
+            logger.error(f'ERROR - {e} - {chat} - {order_id}')
         except MigrateToChat as e:
             await self.db.drop_order(pool, order_id)
-            logger.error(f'ERROR - {e} - {chat}')
+            logger.error(f'ERROR - {e} - {chat} - {order_id}')
         except BotKicked as e:
             await self.db.drop_order(pool, order_id)
-            logger.error(f'ERROR - {e} - {chat}')
+            logger.error(f'ERROR - {e} - {chat} - {order_id}')
         except ChatNotFound as e:
             await self.db.drop_order(pool, order_id)
-            logger.error(f'ERROR - {e} - {chat}')
+            logger.error(f'ERROR - {e} - {chat} - {order_id}')
         except CantInitiateConversation as e:
             await self.db.drop_order(pool, order_id)
-            logger.error(f'ERROR - {e} - {chat}')
+            logger.error(f'ERROR - {e} - {chat} - {order_id}')
         except Unauthorized as e:
             await self.db.drop_order(pool, order_id)
-            logger.error(f'ERROR - {e} - {chat}')
+            logger.error(f'ERROR - {e} - {chat} - {order_id}')
         await pool.close()

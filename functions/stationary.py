@@ -77,9 +77,9 @@ async def send_stationary():
                     await send.sending_statistics(order["chat_id"], message, order["country"], unit,
                                                   order['timezone'], logger, 'rest', order['id'], order['concept'])
                 except TypeError:
-                    logger.error(f'Type ERROR STATIONARY')
+                    logger.error(f'Type ERROR STATIONARY - {order["id"]}')
                 except KeyError:
-                    logger.error(f'Key ERROR STATIONARY')
+                    logger.error(f'Key ERROR STATIONARY - {order["id"]}')
                 except IndexError:
-                    logger.error(f'Index ERROR STATIONARY')
+                    logger.error(f'Index ERROR STATIONARY - {order["id"]}')
     await pool.close()

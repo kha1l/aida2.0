@@ -42,7 +42,7 @@ async def send_refusal():
                               f'Стоимость: {int(values[1])} \U0001F4B5\n'
                     await send.sending(order["chat_id"], message, logger, order['id'])
             except TypeError:
-                logger.error(f'ERROR refusal')
+                logger.error(f'ERROR refusal - {order["id"]}')
             except KeyError:
-                logger.error(f'ERROR refusal')
+                logger.error(f'ERROR refusal - {order["id"]}')
     await pool.close()

@@ -54,9 +54,9 @@ async def work_staff(request, order, dt, db):
                           f'Стаж:  {hire}\n'
                 await send.sending(order['chat_id'], message, logger, order['id'])
     except TypeError:
-        logger.error(f'Type ERROR staff')
+        logger.error(f'Type ERROR staff - {order["id"]}')
     except KeyError:
-        logger.error(f'Key ERROR staff')
+        logger.error(f'Key ERROR staff - {order["id"]}')
 
 
 async def send_staff():

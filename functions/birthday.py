@@ -23,9 +23,9 @@ async def work_birthday(request, chat, dt, db, id):
                           f'Возраст:  {age}\n'
                 await send.sending(chat, message, logger, id)
     except TypeError as e:
-        logger.error(f'Type ERROR birthday - {e}')
+        logger.error(f'Type ERROR birthday - {id} - {e}')
     except KeyError as e:
-        logger.error(f'Key ERROR birthday - {e}')
+        logger.error(f'Key ERROR birthday - {id} - {e}')
 
 
 async def send_birthday():

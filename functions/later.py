@@ -94,7 +94,7 @@ async def order_later(data, access, dt_start, dt_end, chat):
             message += f'\U0001F6A8 {name} не {sex_word} на работу\n'
         message += f'\n\U0001F4F2 <b>Отчет опозданий составлен по пиццерии {rest}</b>'
         await send.sending_function(message, chat, logger)
-    except TypeError:
-        logger.error(f'Type ERROR later - {schedule}')
-    except KeyError:
-        logger.error(f'Key ERROR later - {schedule}')
+    except TypeError as e:
+        logger.error(f'Type ERROR later - {chat} - {e}')
+    except KeyError as e:
+        logger.error(f'Key ERROR later - {chat} - {e}')

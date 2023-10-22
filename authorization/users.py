@@ -60,7 +60,6 @@ class DataUser:
                         pass
                 except ContentTypeError:
                     self.logger.error(f'get_datauser - {response} - {self.access}')
-                    pass
 
     async def get_subs(self):
         headers = self.headers
@@ -105,7 +104,5 @@ class Users:
                     self.sub = jw['sub']
                 except ContentTypeError:
                     logger.error(f'get_tokens - {response} - {self.code}')
-                    pass
                 except KeyError:
                     logger.error(f'get_tokens_KEY_ERROR - {response} - {self.code}')
-                    pass

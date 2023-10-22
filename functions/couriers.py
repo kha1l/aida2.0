@@ -153,13 +153,13 @@ async def send_couriers():
                                         temp_message += (f'\nПри выходе на улицу, не '
                                                          f'забудьте надеть шапку! \U0001F976')
                             except IndexError:
-                                logger.error(f'Index ERROR temp - {uuid}')
+                                logger.error(f'Index ERROR temp - {uuid} - {order["id"]}')
                             except ZeroDivisionError:
-                                logger.error(f'Zero ERROR temp - {uuid}')
+                                logger.error(f'Zero ERROR temp - {uuid} - {order["id"]}')
                         except KeyError as e:
-                            logger.error(f'Key ERROR weather - {uuid} - {e}')
+                            logger.error(f'Key ERROR weather - {uuid} - {e} - {order["id"]}')
                         except IndexError as e:
-                            logger.error(f'Index ERROR weather - {uuid} - {e}')
+                            logger.error(f'Index ERROR weather - {uuid} - {e} - {order["id"]}')
                         try:
                             workload = round(delivery['tripsDuration'] / delivery['couriersShiftsDuration'] * 100, 2)
                         except ZeroDivisionError:
@@ -210,9 +210,9 @@ async def send_couriers():
                                                       order['timezone'], logger, 'courier', order['id'],
                                                       order['concept'])
                 except TypeError:
-                    logger.error(f'Type ERROR statistics - {statistics}')
+                    logger.error(f'Type ERROR statistics - {order["id"]}')
                 except KeyError:
-                    logger.error(f'Key ERROR statistics - {statistics}')
+                    logger.error(f'Key ERROR statistics - {order["id"]}')
     await pool.close()
 
 

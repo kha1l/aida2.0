@@ -48,6 +48,6 @@ async def order_wait(data, access, dt_start, dt_end, chat):
         message += f'\U0001F4F2 <b>Отчет ожиданий составлен по пиццерии {rest}</b>'
         await send.sending_function(message, chat, logger)
     except TypeError:
-        logger.error(f'Type ERROR waiting')
+        logger.error(f'Type ERROR waiting - {chat}')
     except KeyError:
-        logger.error(f'Key ERROR waiting')
+        logger.error(f'Key ERROR waiting - {chat}')

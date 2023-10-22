@@ -367,7 +367,7 @@ async def stationary(call: types.CallbackQuery, callback_data: dict, state: FSMC
     if callback_data['order'] == 'stock':
         await key_rest.set_rest(callback_data['order'], data['units'], units_order, subs_dict,
                                 units_stock=units_stock)
-        rest_audit = ''
+        rest_audit = 'Текущие ревизии в боте:\n'
         for audit_stock in access_stock:
             dt = datetime.strftime(audit_stock['date_audit'], '%d.%m.%Y')
             rest_audit += f'{audit_stock["unit"]} - {dt}\n'
@@ -375,8 +375,8 @@ async def stationary(call: types.CallbackQuery, callback_data: dict, state: FSMC
                                   f'ВАЖНО! Чтобы пользоваться данной '
                                   f'подпиской необходимо внести файл или файлы заведений с последней '
                                   f'ревизией нажав на кнопку "\U0001F4DA Внести файлы последней ревизии"\n'
-                                  f'Текущие ревизии в боте:\n{rest_audit}\n\nЕсли ревизия устарела, '
-                                  f'внесите новый отчет.', reply_markup=key_rest.rest)
+                                  f'{rest_audit}\nЕсли ревизия устарела, внесите новый отчет.',
+                                  reply_markup=key_rest.rest)
     else:
         await key_rest.set_rest(callback_data['order'], data['units'], units_order, subs_dict)
         await call.message.answer(f'Выбери заведения:', reply_markup=key_rest.rest)
@@ -394,7 +394,7 @@ async def audit(call: types.CallbackQuery):
     await cleaner.delete_markup(call)
     await cleaner.delete_message(call.message)
     await call.answer()
-    await call.message.answer(f"Пришлите мне файлы или файл с последней месячной ревизии в заведении\n"
+    await call.message.answer(f"Пришлите мне файлы или файл с последней ревизии в заведении\n"
                               f"(МО - Учет - Остатки по ревизии - Отчет - Отчет v2)")
     await States.audit.set()
 

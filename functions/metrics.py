@@ -74,7 +74,7 @@ async def command_metrics(order, db, pool):
                         if time_rest > 900:
                             count_stationary += 1
             except Exception as e:
-                logger.error(f'Type ERROR handover {e}')
+                logger.error(f'Type ERROR handover {e} - {order["id"]}')
             today = revenue['today']
             week = revenue['weekBeforeToThisTime']
             order_rest = today['stationaryOrderCount']
@@ -91,9 +91,9 @@ async def command_metrics(order, db, pool):
                         if cert != 0:
                             cert = f'{cert} \U00002753'
             except KeyError:
-                logger.error(f'ERROR delivery')
+                logger.error(f'ERROR delivery - {order["id"]}')
             except TypeError:
-                logger.error(f'Type ERROR delivery')
+                logger.error(f'Type ERROR delivery - {order["id"]}')
             try:
                 for prod in product['productivityStatistics']:
                     if prod['unitId'] == unit:
@@ -101,17 +101,17 @@ async def command_metrics(order, db, pool):
                         prod_hour = prod['productsPerLaborHour']
                         orders_hour = prod['ordersPerCourierLabourHour']
             except KeyError:
-                logger.error(f'ERROR productivity')
+                logger.error(f'ERROR productivity - {order["id"]}')
             except TypeError:
-                logger.error(f'Type ERROR productivity')
+                logger.error(f'Type ERROR productivity - {order["id"]}')
             try:
                 for hand in handover['ordersHandoverStatistics']:
                     if hand['unitId'] == unit:
                         time_rest = timedelta(seconds=(hand['avgTrackingPendingTime'] + hand['avgCookingTime']))
             except KeyError:
-                logger.error(f'ERROR handover')
+                logger.error(f'ERROR handover - {order["id"]}')
             except TypeError:
-                logger.error(f'Type ERROR handover')
+                logger.error(f'Type ERROR handover - {order["id"]}')
             rev = await change_revenue(revenue_today, revenue_week)
             try:
                 perc_later_rest = round(count_stationary / order_rest * 100, 2)
