@@ -26,22 +26,22 @@ from functions.stops import stops_rest, stops_sector, stops_ings, stops_key_ings
 from datetime import datetime, timedelta
 
 
-Config.scheduler.add_job(update_subs_day, 'cron', day_of_week='*', hour=4, minute=15)
-Config.scheduler.add_job(update_tokens_app, 'interval', hours=12)
-Config.scheduler.add_job(send_stock, 'cron', day_of_week="*", hour=8, minute=0)
-Config.scheduler.add_job(send_birthday, 'cron', day_of_week="*", hour='0-23', minute=15)
-Config.scheduler.add_job(send_metrics, 'cron', day_of_week="*", hour='0-23', minute=0)
-Config.scheduler.add_job(send_couriers, 'cron', day_of_week="*", hour='0-23', minute=5)
-Config.scheduler.add_job(send_staff, 'cron', day_of_week="*", hour='0-23', minute=0)
-Config.scheduler.add_job(send_stationary, 'cron', day_of_week="*", hour='0-23', minute=0)
-Config.scheduler.add_job(send_revenue, 'cron', day_of_week="*", hour='0-23', minute=25)
-Config.scheduler.add_job(send_refusal, 'cron', day_of_week="*", hour='0-23', minute=20)
-Config.scheduler.add_job(stops_key_ings, 'interval', minutes=5, start_date=datetime(2023, 10, 16, 13, 50, 0))
-Config.scheduler.add_job(stops_ings, 'interval', minutes=5, start_date=datetime(2023, 10, 16, 13, 52, 0))
-Config.scheduler.add_job(stops_rest, 'interval', minutes=5, start_date=datetime(2023, 10, 16, 13, 54, 0))
-Config.scheduler.add_job(stops_sector, 'interval', minutes=5, start_date=datetime(2023, 10, 16, 13, 56, 0))
-Config.scheduler.add_job(send_tickets, 'interval', minutes=5, start_date=datetime(2023, 10, 16, 13, 58, 0))
-Config.scheduler.add_job(application_stock, 'cron', day_of_week="*", hour=6, minute=0)
+# Config.scheduler.add_job(update_subs_day, 'cron', day_of_week='*', hour=4, minute=15)
+# Config.scheduler.add_job(update_tokens_app, 'interval', hours=12)
+# Config.scheduler.add_job(send_stock, 'cron', day_of_week="*", hour=8, minute=0)
+# Config.scheduler.add_job(send_birthday, 'cron', day_of_week="*", hour='0-23', minute=15)
+# Config.scheduler.add_job(send_metrics, 'cron', day_of_week="*", hour='0-23', minute=0)
+# Config.scheduler.add_job(send_couriers, 'cron', day_of_week="*", hour='0-23', minute=15)
+# Config.scheduler.add_job(send_staff, 'cron', day_of_week="*", hour='0-23', minute=0)
+# Config.scheduler.add_job(send_stationary, 'cron', day_of_week="*", hour='0-23', minute=17)
+# Config.scheduler.add_job(send_revenue, 'cron', day_of_week="*", hour='0-23', minute=25)
+# Config.scheduler.add_job(send_refusal, 'cron', day_of_week="*", hour='0-23', minute=20)
+# Config.scheduler.add_job(stops_key_ings, 'interval', minutes=5, start_date=datetime(2023, 10, 17, 13, 50, 0))
+# Config.scheduler.add_job(stops_ings, 'interval', minutes=5, start_date=datetime(2023, 10, 16, 13, 52, 0))
+# Config.scheduler.add_job(stops_rest, 'interval', minutes=5, start_date=datetime(2023, 10, 16, 13, 54, 0))
+# Config.scheduler.add_job(stops_sector, 'interval', minutes=5, start_date=datetime(2023, 10, 16, 13, 56, 0))
+# Config.scheduler.add_job(send_tickets, 'interval', minutes=5, start_date=datetime(2023, 10, 16, 13, 58, 0))
+# Config.scheduler.add_job(application_stock, 'cron', day_of_week="*", hour=6, minute=0)
 
 
 @Config.dp.message_handler(CommandStart(), state=['*'])
@@ -364,11 +364,16 @@ async def stationary(call: types.CallbackQuery, callback_data: dict, state: FSMC
     if callback_data['order'] == 'stock':
         await key_rest.set_rest(callback_data['order'], data['units'], units_order, subs_dict,
                                 units_stock=units_stock)
+        rest_audit = ''
+        for audit_stock in access_stock:
+            dt = datetime.strftime(audit_stock['date_audit'], '%d.%m.%Y')
+            rest_audit += f'{audit_stock["unit"]} - {dt}\n'
         await call.message.answer(f'Выбери заведения:\n'
                                   f'ВАЖНО! Чтобы пользоваться данной '
                                   f'подпиской необходимо внести файл или файлы заведений с последней '
-                                  f'ревизией нажав на кнопку "\U0001F4DA Внести файлы месячной ревизии"',
-                                  reply_markup=key_rest.rest)
+                                  f'ревизией нажав на кнопку "\U0001F4DA Внести файлы последней ревизии"\n'
+                                  f'Текущие ревизии в боте:\n{rest_audit}\n\nЕсли ревизия устарела, '
+                                  f'внесите новый отчет.', reply_markup=key_rest.rest)
     else:
         await key_rest.set_rest(callback_data['order'], data['units'], units_order, subs_dict)
         await call.message.answer(f'Выбери заведения:', reply_markup=key_rest.rest)

@@ -194,6 +194,16 @@ class KeySettings:
             )],
         [
             InlineKeyboardButton(
+                text=f'\U0001F4DA База знаний',
+                url='https://aida.kaiten.site'
+            )],
+        [
+            InlineKeyboardButton(
+                text=f'\U000023CF Обновления',
+                url='https://aidaupdate.kaiten.site'
+            )],
+        [
+            InlineKeyboardButton(
                 text=f'\U0001F519 Назад',
                 callback_data='back'
             )]
