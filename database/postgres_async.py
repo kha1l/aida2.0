@@ -27,12 +27,12 @@ class AsyncDatabase:
 
         return data
 
-    async def add_user(self, pool, user_id, username, name, sub):
+    async def add_user(self, pool, user_id, username, name, sub, dt):
         sql = '''
-            INSERT INTO aida_users (user_id, username, name, sub) VALUES 
-            ($1, $2, $3, $4) RETURNING id
+            INSERT INTO aida_users (user_id, username, name, sub, date_subs) VALUES 
+            ($1, $2, $3, $4, $5) RETURNING id
         '''
-        params = (user_id, username, name, sub)
+        params = (user_id, username, name, sub, dt)
         return await self.execute(pool, sql, parameters=params, fetchone=True)
 
     async def add_person(self, pool, id, person):

@@ -26,22 +26,22 @@ from functions.stops import stops_rest, stops_sector, stops_ings, stops_key_ings
 from datetime import datetime, timedelta
 
 
-# Config.scheduler.add_job(update_subs_day, 'cron', day_of_week='*', hour=4, minute=15)
-# Config.scheduler.add_job(update_tokens_app, 'interval', hours=12)
-# Config.scheduler.add_job(send_stock, 'cron', day_of_week="*", hour=8, minute=0)
-# Config.scheduler.add_job(send_birthday, 'cron', day_of_week="*", hour='0-23', minute=15)
-# Config.scheduler.add_job(send_metrics, 'cron', day_of_week="*", hour='0-23', minute=0)
-# Config.scheduler.add_job(send_couriers, 'cron', day_of_week="*", hour='0-23', minute=15)
-# Config.scheduler.add_job(send_staff, 'cron', day_of_week="*", hour='0-23', minute=0)
-# Config.scheduler.add_job(send_stationary, 'cron', day_of_week="*", hour='0-23', minute=17)
-# Config.scheduler.add_job(send_revenue, 'cron', day_of_week="*", hour='0-23', minute=25)
-# Config.scheduler.add_job(send_refusal, 'cron', day_of_week="*", hour='0-23', minute=20)
-# Config.scheduler.add_job(stops_key_ings, 'interval', minutes=5, start_date=datetime(2023, 10, 22, 18, 40, 0))
-# Config.scheduler.add_job(stops_ings, 'interval', minutes=5, start_date=datetime(2023, 10, 22, 18, 42, 0))
-# Config.scheduler.add_job(stops_rest, 'interval', minutes=5, start_date=datetime(2023, 10, 22, 18, 44, 0))
-# Config.scheduler.add_job(stops_sector, 'interval', minutes=5, start_date=datetime(2023, 10, 22, 18, 46, 0))
-# Config.scheduler.add_job(send_tickets, 'interval', minutes=5, start_date=datetime(2023, 10, 22, 18, 48, 0))
-# Config.scheduler.add_job(application_stock, 'cron', day_of_week="*", hour=6, minute=0)
+Config.scheduler.add_job(update_subs_day, 'cron', day_of_week='*', hour=4, minute=15)
+Config.scheduler.add_job(update_tokens_app, 'interval', hours=12)
+Config.scheduler.add_job(send_stock, 'cron', day_of_week="*", hour=8, minute=0)
+Config.scheduler.add_job(send_birthday, 'cron', day_of_week="*", hour='0-23', minute=15)
+Config.scheduler.add_job(send_metrics, 'cron', day_of_week="*", hour='0-23', minute=0)
+Config.scheduler.add_job(send_couriers, 'cron', day_of_week="*", hour='0-23', minute=15)
+Config.scheduler.add_job(send_staff, 'cron', day_of_week="*", hour='0-23', minute=0)
+Config.scheduler.add_job(send_stationary, 'cron', day_of_week="*", hour='0-23', minute=17)
+Config.scheduler.add_job(send_revenue, 'cron', day_of_week="*", hour='0-23', minute=25)
+Config.scheduler.add_job(send_refusal, 'cron', day_of_week="*", hour='0-23', minute=20)
+Config.scheduler.add_job(stops_key_ings, 'interval', minutes=5, start_date=datetime(2023, 10, 24, 13, 10, 0))
+Config.scheduler.add_job(stops_ings, 'interval', minutes=5, start_date=datetime(2023, 10, 24, 13, 12, 0))
+Config.scheduler.add_job(stops_rest, 'interval', minutes=5, start_date=datetime(2023, 10, 24, 13, 14, 0))
+Config.scheduler.add_job(stops_sector, 'interval', minutes=5, start_date=datetime(2023, 10, 24, 13, 16, 0))
+Config.scheduler.add_job(send_tickets, 'interval', minutes=5, start_date=datetime(2023, 10, 24, 13, 18, 0))
+Config.scheduler.add_job(application_stock, 'cron', day_of_week="*", hour=6, minute=0)
 
 
 @Config.dp.message_handler(CommandStart(), state=['*'])
@@ -57,11 +57,12 @@ async def start_func(message: types.Message, state: FSMContext):
         user = Users(code)
         await user.get_tokens()
         account = await db.check_auth(pool, user_id)
+        dt_now = datetime.now()
         if not account:
             data = DataUser(user.access)
             await data.get_person()
             record = await db.add_user(pool, user_id, message.from_user.username,
-                                       message.from_user.first_name, user.sub)
+                                       message.from_user.first_name, user.sub, dt_now)
             await db.add_person(pool, record['id'], data)
             await db.add_tokens(pool, record['id'], user.access, user.refresh)
             access_units, subs = await add_stationary(record['id'], user.access)
@@ -70,7 +71,7 @@ async def start_func(message: types.Message, state: FSMContext):
                 reach = await db.check_stationary(pool, units['uuid'])
                 if reach:
                     minutes = reach['timezone'] * 60 - 180
-                    dt = ((datetime.now().replace(minute=0, second=0, microsecond=0)) + timedelta(
+                    dt = ((dt_now.replace(minute=0, second=0, microsecond=0)) + timedelta(
                         minutes=minutes)).date()
                     dt_str = datetime.strftime(dt, '%Y-%m-%d')
                     if reach['subs'] != units['subs'] or reach['expires'] != units['expires'] \
