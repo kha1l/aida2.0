@@ -134,14 +134,14 @@ class AsyncDatabase:
 
     async def get_functions(self, pool, call):
         sql = '''
-            SELECT name, alias FROM aida_functions WHERE groups = $1
+            SELECT name, alias FROM aida_functions WHERE groups = $1 ORDER BY id
         '''
         params = (call, )
         return await self.execute(pool, sql, parameters=params, fetchall=True)
 
     async def get_func(self, pool, group):
         sql = '''
-            SELECT name, alias FROM aida_stops WHERE groups = $1
+            SELECT name, alias FROM aida_stops WHERE groups = $1 ORDER BY id
         '''
         params = (group,)
         return await self.execute(pool, sql, parameters=params, fetchall=True)
