@@ -26,22 +26,22 @@ from functions.stops import stops_rest, stops_sector, stops_ings, stops_key_ings
 from datetime import datetime, timedelta
 
 
-Config.scheduler.add_job(update_subs_day, 'cron', day_of_week='*', hour=4, minute=15)
-Config.scheduler.add_job(update_tokens_app, 'interval', hours=12)
-Config.scheduler.add_job(send_stock, 'cron', day_of_week="*", hour=8, minute=0)
-Config.scheduler.add_job(send_birthday, 'cron', day_of_week="*", hour='0-23', minute=15)
-Config.scheduler.add_job(send_metrics, 'cron', day_of_week="*", hour='0-23', minute=0)
-Config.scheduler.add_job(send_couriers, 'cron', day_of_week="*", hour='0-23', minute=15)
-Config.scheduler.add_job(send_staff, 'cron', day_of_week="*", hour='0-23', minute=0)
-Config.scheduler.add_job(send_stationary, 'cron', day_of_week="*", hour='0-23', minute=17)
-Config.scheduler.add_job(send_revenue, 'cron', day_of_week="*", hour='0-23', minute=25)
-Config.scheduler.add_job(send_refusal, 'cron', day_of_week="*", hour='0-23', minute=20)
-Config.scheduler.add_job(stops_key_ings, 'interval', minutes=5, start_date=datetime(2023, 10, 22, 18, 40, 0))
-Config.scheduler.add_job(stops_ings, 'interval', minutes=5, start_date=datetime(2023, 10, 22, 18, 42, 0))
-Config.scheduler.add_job(stops_rest, 'interval', minutes=5, start_date=datetime(2023, 10, 22, 18, 44, 0))
-Config.scheduler.add_job(stops_sector, 'interval', minutes=5, start_date=datetime(2023, 10, 22, 18, 46, 0))
-Config.scheduler.add_job(send_tickets, 'interval', minutes=5, start_date=datetime(2023, 10, 22, 18, 48, 0))
-Config.scheduler.add_job(application_stock, 'cron', day_of_week="*", hour=6, minute=0)
+# Config.scheduler.add_job(update_subs_day, 'cron', day_of_week='*', hour=4, minute=15)
+# Config.scheduler.add_job(update_tokens_app, 'interval', hours=12)
+# Config.scheduler.add_job(send_stock, 'cron', day_of_week="*", hour=8, minute=0)
+# Config.scheduler.add_job(send_birthday, 'cron', day_of_week="*", hour='0-23', minute=15)
+# Config.scheduler.add_job(send_metrics, 'cron', day_of_week="*", hour='0-23', minute=0)
+# Config.scheduler.add_job(send_couriers, 'cron', day_of_week="*", hour='0-23', minute=15)
+# Config.scheduler.add_job(send_staff, 'cron', day_of_week="*", hour='0-23', minute=0)
+# Config.scheduler.add_job(send_stationary, 'cron', day_of_week="*", hour='0-23', minute=17)
+# Config.scheduler.add_job(send_revenue, 'cron', day_of_week="*", hour='0-23', minute=25)
+# Config.scheduler.add_job(send_refusal, 'cron', day_of_week="*", hour='0-23', minute=20)
+# Config.scheduler.add_job(stops_key_ings, 'interval', minutes=5, start_date=datetime(2023, 10, 22, 18, 40, 0))
+# Config.scheduler.add_job(stops_ings, 'interval', minutes=5, start_date=datetime(2023, 10, 22, 18, 42, 0))
+# Config.scheduler.add_job(stops_rest, 'interval', minutes=5, start_date=datetime(2023, 10, 22, 18, 44, 0))
+# Config.scheduler.add_job(stops_sector, 'interval', minutes=5, start_date=datetime(2023, 10, 22, 18, 46, 0))
+# Config.scheduler.add_job(send_tickets, 'interval', minutes=5, start_date=datetime(2023, 10, 22, 18, 48, 0))
+# Config.scheduler.add_job(application_stock, 'cron', day_of_week="*", hour=6, minute=0)
 
 
 @Config.dp.message_handler(CommandStart(), state=['*'])
@@ -325,7 +325,7 @@ async def stops_menu(call: types.CallbackQuery, state: FSMContext):
     await cleaner.delete_markup(call)
     await key.set_stops()
     await cleaner.delete_message(call.message)
-    await state.update_data(key=key, stc='States:rest')
+    await state.update_data(stc='States:rest')
     await call.message.answer(f'Стопы', reply_markup=key.stops)
     await States.stops.set()
 
@@ -380,7 +380,7 @@ async def stationary(call: types.CallbackQuery, callback_data: dict, state: FSMC
     else:
         await key_rest.set_rest(callback_data['order'], data['units'], units_order, subs_dict)
         await call.message.answer(f'Выбери заведения:', reply_markup=key_rest.rest)
-    await state.update_data(orders=units_order, key=key, order=callback_data['order'],
+    await state.update_data(orders=units_order, order=callback_data['order'],
                             subs_dict=subs_dict, unit_del=unit_del, unit_add=unit_add,
                             code=code, tz=tz, in_orders=in_orders, id_order=id_order,
                             stc=state_now, concept=concept, stock=units_stock)
@@ -518,6 +518,7 @@ async def back_work(call: types.CallbackQuery, state: FSMContext):
         await cleaner.delete_message(call.message)
         await call.answer()
         if data['stc'] == 'States:stops':
+            await key.set_stops()
             await call.message.answer(f'Стопы', reply_markup=key.stops)
             await state.update_data(stc='States:rest')
             await States.stops.set()
@@ -533,6 +534,7 @@ async def back_work(call: types.CallbackQuery, state: FSMContext):
             await States.types.set()
     except KeyError:
         if await state.get_state() == 'States:out_call':
+            await cleaner.delete_message(call.message)
             await call.message.answer(f'Настройки приложения: \U0001F9BE', reply_markup=KeySettings.setting)
             await States.settings.set()
         else:

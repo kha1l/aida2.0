@@ -75,6 +75,7 @@ async def stops_sector():
             try:
                 for sc in channel['stopSalesBySectors']:
                     start_date = sc['startedAt']
+                    subs = sc['isSubSector']
                     if start_date != '0001-01-01':
                         start_date = datetime.strptime(start_date, '%Y-%m-%dT%H:%M:%S')
                     else:
@@ -87,6 +88,8 @@ async def stops_sector():
                         message = f'\U0001F534 Остановка сектора\n\n' \
                                   f'<b>{sector} в {rest}</b>\n' \
                                   f'Время остановки: {time_tm.time()}\n'
+                        if subs:
+                            message += f'Сектор создан менеджером смены'
                         await send.sending(order["chat_id"], message, logger, order['id'])
                     if sc['endedAt'] is not None and sc['endedAt']:
                         end_date = datetime.strptime(sc['endedAt'], '%Y-%m-%dT%H:%M:%S')
@@ -98,6 +101,8 @@ async def stops_sector():
                             message = f'\U0001F7E2 Возобновление сектора\n\n' \
                                       f'<b>{sector} в {rest}</b>\n' \
                                       f'Время возобновления: {time_tm.time()}\n'
+                            if subs:
+                                message += f'Сектор создан менеджером смены'
                             await send.sending(order["chat_id"], message, logger, order['id'])
             except TypeError as e:
                 logger.error(f'Type ERROR stop_sector - {order["id"]} - {e}')
