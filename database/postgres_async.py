@@ -96,6 +96,12 @@ class AsyncDatabase:
         params = (uuid,)
         return await self.execute(pool, sql, parameters=params, fetchone=True)
 
+    async def select_all_stationary(self, pool):
+        sql = '''
+            SELECT * FROM aida_stationary;
+        '''
+        return await self.execute(pool, sql, fetchone=True)
+
     async def update_stationary(self, pool, unit, id, dt):
         sql = '''
             UPDATE aida_stationary
@@ -214,6 +220,12 @@ class AsyncDatabase:
         '''
         params = (post, )
         return await self.execute(pool, sql, parameters=params, fetchall=True)
+
+    async def select_all_orders(self, pool):
+        sql = '''
+            SELECT * FROM aida_orders;
+        '''
+        return await self.execute(pool, sql, fetchall=True)
 
     async def select_orders_metrics(self, pool, post, chat):
         sql = '''
