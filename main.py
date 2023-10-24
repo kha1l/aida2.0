@@ -27,23 +27,23 @@ from datetime import datetime, timedelta
 from utils.changer import change_orders
 
 
-Config.scheduler.add_job(change_orders, 'cron', day_of_week='*', hour=2, minute=0)
-Config.scheduler.add_job(update_subs_day, 'cron', day_of_week='*', hour=4, minute=15)
-Config.scheduler.add_job(update_tokens_app, 'interval', hours=12)
-Config.scheduler.add_job(send_stock, 'cron', day_of_week="*", hour=8, minute=0)
-Config.scheduler.add_job(send_birthday, 'cron', day_of_week="*", hour='0-23', minute=15)
-Config.scheduler.add_job(send_metrics, 'cron', day_of_week="*", hour='0-23', minute=0)
-Config.scheduler.add_job(send_couriers, 'cron', day_of_week="*", hour='0-23', minute=15)
-Config.scheduler.add_job(send_staff, 'cron', day_of_week="*", hour='0-23', minute=30)
-Config.scheduler.add_job(send_stationary, 'cron', day_of_week="*", hour='0-23', minute=15)
-Config.scheduler.add_job(send_revenue, 'cron', day_of_week="*", hour='0-23', minute=30)
-Config.scheduler.add_job(send_refusal, 'cron', day_of_week="*", hour='0-23', minute=45)
-Config.scheduler.add_job(stops_key_ings, 'interval', minutes=5, start_date=datetime(2023, 10, 24, 13, 10, 0))
-Config.scheduler.add_job(stops_ings, 'interval', minutes=5, start_date=datetime(2023, 10, 24, 13, 12, 0))
-Config.scheduler.add_job(stops_rest, 'interval', minutes=5, start_date=datetime(2023, 10, 24, 13, 14, 0))
-Config.scheduler.add_job(stops_sector, 'interval', minutes=5, start_date=datetime(2023, 10, 24, 13, 16, 0))
-Config.scheduler.add_job(send_tickets, 'interval', minutes=5, start_date=datetime(2023, 10, 24, 13, 18, 0))
-Config.scheduler.add_job(application_stock, 'cron', day_of_week="*", hour=5, minute=0)
+# Config.scheduler.add_job(change_orders, 'cron', day_of_week='*', hour=2, minute=0)
+# Config.scheduler.add_job(update_subs_day, 'cron', day_of_week='*', hour=4, minute=15)
+# Config.scheduler.add_job(update_tokens_app, 'interval', hours=12)
+# Config.scheduler.add_job(send_stock, 'cron', day_of_week="*", hour=8, minute=0)
+# Config.scheduler.add_job(send_birthday, 'cron', day_of_week="*", hour='0-23', minute=15)
+# Config.scheduler.add_job(send_metrics, 'cron', day_of_week="*", hour='0-23', minute=0)
+# Config.scheduler.add_job(send_couriers, 'cron', day_of_week="*", hour='0-23', minute=15)
+# Config.scheduler.add_job(send_staff, 'cron', day_of_week="*", hour='0-23', minute=30)
+# Config.scheduler.add_job(send_stationary, 'cron', day_of_week="*", hour='0-23', minute=15)
+# Config.scheduler.add_job(send_revenue, 'cron', day_of_week="*", hour='0-23', minute=30)
+# Config.scheduler.add_job(send_refusal, 'cron', day_of_week="*", hour='0-23', minute=45)
+# Config.scheduler.add_job(stops_key_ings, 'interval', minutes=5, start_date=datetime(2023, 10, 24, 13, 20, 0))
+# Config.scheduler.add_job(stops_ings, 'interval', minutes=5, start_date=datetime(2023, 10, 24, 13, 22, 0))
+# Config.scheduler.add_job(stops_rest, 'interval', minutes=5, start_date=datetime(2023, 10, 24, 13, 24, 0))
+# Config.scheduler.add_job(stops_sector, 'interval', minutes=5, start_date=datetime(2023, 10, 24, 13, 26, 0))
+# Config.scheduler.add_job(send_tickets, 'interval', minutes=5, start_date=datetime(2023, 10, 24, 13, 28, 0))
+# Config.scheduler.add_job(application_stock, 'cron', day_of_week="*", hour=5, minute=0)
 
 
 @Config.dp.message_handler(CommandStart(), state=['*'])
@@ -133,7 +133,6 @@ async def start_func(message: types.Message, state: FSMContext):
             await States.types.set()
         else:
             await cleaner.delete_message(mess)
-            logger.info(f'Error auth without CODE {message.from_user.username}')
             await message.answer(f'Привет, {message.from_user.full_name}\n\n'
                                  f'Я - Aida. Помогаю удаленно управлять рестораном или сетью ресторанов '
                                  f'Dodo Brands и принимать правильные управленческие решения.\n'

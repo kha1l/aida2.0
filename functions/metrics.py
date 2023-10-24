@@ -122,7 +122,7 @@ async def command_metrics(order, db, pool, types):
                 message = f'\U0001F4CA <b>Ключевые метрики в заведении {rest["name"]}' \
                           f' по состоянию на {dt_end.split("T")[-1].split(":")[0]} часов</b>\n\n'
             else:
-                message = f'\U0001F4CA <b>Ключевые метрики в заведении {rest["name"]}\n\n'
+                message = f'\U0001F4CA <b>Ключевые метрики в заведении {rest["name"]}</b>\n\n'
             message += f'Выручка: {rev}\n' \
                        f'Производительность: {int(productivity)}\n' \
                        f'Продуктов на чел/час: {str(prod_hour).replace(".", ",")}\n' \
