@@ -25,6 +25,7 @@ from functions.stock_functions.reader_stock import read_file_audit
 from functions.stops import stops_rest, stops_sector, stops_ings, stops_key_ings
 from datetime import datetime, timedelta
 from utils.changer import change_orders
+import asyncio
 
 
 Config.scheduler.add_job(change_orders, 'cron', day_of_week='*', hour=2, minute=0)
@@ -38,11 +39,11 @@ Config.scheduler.add_job(send_staff, 'cron', day_of_week="*", hour='0-23', minut
 Config.scheduler.add_job(send_stationary, 'cron', day_of_week="*", hour='0-23', minute=15)
 Config.scheduler.add_job(send_revenue, 'cron', day_of_week="*", hour='0-23', minute=30)
 Config.scheduler.add_job(send_refusal, 'cron', day_of_week="*", hour='0-23', minute=45)
-Config.scheduler.add_job(stops_key_ings, 'interval', minutes=5, start_date=datetime(2023, 10, 24, 13, 50, 0))
-Config.scheduler.add_job(stops_ings, 'interval', minutes=5, start_date=datetime(2023, 10, 24, 13, 52, 0))
-Config.scheduler.add_job(stops_rest, 'interval', minutes=5, start_date=datetime(2023, 10, 24, 13, 54, 0))
-Config.scheduler.add_job(stops_sector, 'interval', minutes=5, start_date=datetime(2023, 10, 24, 13, 56, 0))
-Config.scheduler.add_job(send_tickets, 'interval', minutes=5, start_date=datetime(2023, 10, 24, 13, 58, 0))
+Config.scheduler.add_job(stops_key_ings, 'interval', minutes=5, start_date=datetime(2023, 10, 24, 16, 40, 0))
+Config.scheduler.add_job(stops_ings, 'interval', minutes=5, start_date=datetime(2023, 10, 24, 16, 42, 0))
+Config.scheduler.add_job(stops_rest, 'interval', minutes=5, start_date=datetime(2023, 10, 24, 16, 44, 0))
+Config.scheduler.add_job(stops_sector, 'interval', minutes=5, start_date=datetime(2023, 10, 24, 16, 46, 0))
+Config.scheduler.add_job(send_tickets, 'interval', minutes=5, start_date=datetime(2023, 10, 24, 16, 48, 0))
 Config.scheduler.add_job(application_stock, 'cron', day_of_week="*", hour=5, minute=0)
 
 
@@ -371,8 +372,9 @@ async def stationary(call: types.CallbackQuery, callback_data: dict, state: FSMC
                                 units_stock=units_stock)
         rest_audit = 'Текущие ревизии в боте:\n'
         for audit_stock in access_stock:
-            dt = datetime.strftime(audit_stock['date_audit'], '%d.%m.%Y')
-            rest_audit += f'{audit_stock["unit"]} - {dt}\n'
+            if audit_stock['uuid'] in units_order:
+                dt = datetime.strftime(audit_stock['date_audit'], '%d.%m.%Y')
+                rest_audit += f'{audit_stock["unit"]} - {dt}\n'
         await call.message.answer(f'Выбери заведения:\n'
                                   f'ВАЖНО! Чтобы пользоваться данной '
                                   f'подпиской необходимо внести файл или файлы заведений с последней '
@@ -472,6 +474,7 @@ async def stationary(call: types.CallbackQuery, callback_data: dict, state: FSMC
             await key.set_rest(data['order'], data['units'], orders, data['subs_dict'], units_stock=data['stock'])
         else:
             await key.set_rest(data['order'], data['units'], orders, data['subs_dict'])
+        await asyncio.sleep(0.2)
         await state.update_data(orders=orders, unit_add=unit_add, unit_del=unit_del, stock=data['stock'])
         await cleaner.edit_markup(call, key.rest)
     else:

@@ -41,14 +41,17 @@ async def command_revenue(order, db, pool, types):
         link = f'https://publicapi.{type_concept[order["concept"]]}dodois.io/{order["country"]}/api/v1/' \
                f'OperationalStatisticsForTodayAndWeekBefore/{rest["unit_id"]}'
         revenue = await public_api(link)
-        today = revenue['today']
-        week = revenue['weekBeforeToThisTime']
-        revenue_today = today['revenue']
-        revenue_week = week['revenue']
-        total_week += revenue_week
-        total_today += revenue_today
-        rev, perc = await change_revenue(revenue_today, revenue_week)
-        data.append((rest["name"], rev, f'{perc}'))
+        try:
+            today = revenue['today']
+            week = revenue['weekBeforeToThisTime']
+            revenue_today = today['revenue']
+            revenue_week = week['revenue']
+            total_week += revenue_week
+            total_today += revenue_today
+            rev, perc = await change_revenue(revenue_today, revenue_week)
+            data.append((rest["name"], rev, f'{perc}'))
+        except KeyError as e:
+            logger.error(f'Error {e} - {rest["unit_id"]}')
     total_rev, total_perc = await change_revenue(total_today, total_week)
     data.append((f'\n<b>Итого:</b>', total_rev, total_perc))
     for item in data:

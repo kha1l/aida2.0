@@ -283,7 +283,7 @@ class AsyncDatabase:
 
     async def get_units_stock(self, pool):
         sql = '''
-            SELECT DISTINCT unit, date_audit
+            SELECT DISTINCT unit, date_audit, uuid
             FROM aida_stock;
         '''
         return await self.execute(pool, sql, fetchall=True)
