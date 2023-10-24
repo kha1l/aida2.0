@@ -39,11 +39,11 @@ Config.scheduler.add_job(send_staff, 'cron', day_of_week="*", hour='0-23', minut
 Config.scheduler.add_job(send_stationary, 'cron', day_of_week="*", hour='0-23', minute=15)
 Config.scheduler.add_job(send_revenue, 'cron', day_of_week="*", hour='0-23', minute=30)
 Config.scheduler.add_job(send_refusal, 'cron', day_of_week="*", hour='0-23', minute=45)
-Config.scheduler.add_job(stops_key_ings, 'interval', minutes=5, start_date=datetime(2023, 10, 24, 16, 40, 0))
-Config.scheduler.add_job(stops_ings, 'interval', minutes=5, start_date=datetime(2023, 10, 24, 16, 42, 0))
-Config.scheduler.add_job(stops_rest, 'interval', minutes=5, start_date=datetime(2023, 10, 24, 16, 44, 0))
-Config.scheduler.add_job(stops_sector, 'interval', minutes=5, start_date=datetime(2023, 10, 24, 16, 46, 0))
-Config.scheduler.add_job(send_tickets, 'interval', minutes=5, start_date=datetime(2023, 10, 24, 16, 48, 0))
+Config.scheduler.add_job(stops_key_ings, 'interval', minutes=5, start_date=datetime(2023, 10, 24, 17, 0, 0))
+Config.scheduler.add_job(stops_ings, 'interval', minutes=5, start_date=datetime(2023, 10, 24, 17, 2, 0))
+Config.scheduler.add_job(stops_rest, 'interval', minutes=5, start_date=datetime(2023, 10, 24, 17, 4, 0))
+Config.scheduler.add_job(stops_sector, 'interval', minutes=5, start_date=datetime(2023, 10, 24, 17, 6, 0))
+Config.scheduler.add_job(send_tickets, 'interval', minutes=5, start_date=datetime(2023, 10, 24, 17, 8, 0))
 Config.scheduler.add_job(application_stock, 'cron', day_of_week="*", hour=5, minute=0)
 
 
@@ -367,12 +367,15 @@ async def stationary(call: types.CallbackQuery, callback_data: dict, state: FSMC
         units_order = orders['uuid']
         id_order = orders['id']
     unit_add, unit_del = [], []
+    access_units = []
+    for unit in data['units']:
+        access_units.append(unit['uuid'])
     if callback_data['order'] == 'stock':
         await key_rest.set_rest(callback_data['order'], data['units'], units_order, subs_dict,
                                 units_stock=units_stock)
         rest_audit = 'Текущие ревизии в боте:\n'
         for audit_stock in access_stock:
-            if audit_stock['uuid'] in units_order:
+            if audit_stock['uuid'] in access_units:
                 dt = datetime.strftime(audit_stock['date_audit'], '%d.%m.%Y')
                 rest_audit += f'{audit_stock["unit"]} - {dt}\n'
         await call.message.answer(f'Выбери заведения:\n'
