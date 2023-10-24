@@ -20,7 +20,7 @@ async def change_revenue(today, week):
     return formatted, perc
 
 
-async def command_revenue(order, db, pool):
+async def command_revenue(order, db, pool, types):
     logger = Log('revenue')
     type_concept = {
         'dodopizza': '',
@@ -31,7 +31,10 @@ async def command_revenue(order, db, pool):
     send = Send(db=db)
     dt_for_message = datetime.strftime(dt, '%d.%m')
     total_today, total_week = 0, 0
-    message = f'\U0001F4CA <b>Выручка по сети на {dt_for_message}:</b>\n'
+    if types == 'func':
+        message = f'\U0001F4CA <b>Выручка по сети на {dt_for_message}:</b>\n'
+    else:
+        message = f'\U0001F4CA <b>Выручка по сети:</b>\n'
     data = []
     for unit in order["uuid"]:
         rest = await db.get_data_rest(pool, unit)
@@ -62,5 +65,5 @@ async def send_revenue():
     for order in orders:
         hour = datetime.now().hour - 3 + order['timezone']
         if hour in hours:
-            await command_revenue(order, db, pool)
+            await command_revenue(order, db, pool, 'func')
     await pool.close()

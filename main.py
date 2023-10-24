@@ -24,24 +24,26 @@ from functions.stock_functions.work_stock import application_stock
 from functions.stock_functions.reader_stock import read_file_audit
 from functions.stops import stops_rest, stops_sector, stops_ings, stops_key_ings
 from datetime import datetime, timedelta
+from utils.changer import change_orders
 
 
+Config.scheduler.add_job(change_orders, 'cron', day_of_week='*', hour=2, minute=0)
 Config.scheduler.add_job(update_subs_day, 'cron', day_of_week='*', hour=4, minute=15)
 Config.scheduler.add_job(update_tokens_app, 'interval', hours=12)
 Config.scheduler.add_job(send_stock, 'cron', day_of_week="*", hour=8, minute=0)
 Config.scheduler.add_job(send_birthday, 'cron', day_of_week="*", hour='0-23', minute=15)
 Config.scheduler.add_job(send_metrics, 'cron', day_of_week="*", hour='0-23', minute=0)
 Config.scheduler.add_job(send_couriers, 'cron', day_of_week="*", hour='0-23', minute=15)
-Config.scheduler.add_job(send_staff, 'cron', day_of_week="*", hour='0-23', minute=0)
-Config.scheduler.add_job(send_stationary, 'cron', day_of_week="*", hour='0-23', minute=17)
-Config.scheduler.add_job(send_revenue, 'cron', day_of_week="*", hour='0-23', minute=25)
-Config.scheduler.add_job(send_refusal, 'cron', day_of_week="*", hour='0-23', minute=20)
+Config.scheduler.add_job(send_staff, 'cron', day_of_week="*", hour='0-23', minute=30)
+Config.scheduler.add_job(send_stationary, 'cron', day_of_week="*", hour='0-23', minute=15)
+Config.scheduler.add_job(send_revenue, 'cron', day_of_week="*", hour='0-23', minute=30)
+Config.scheduler.add_job(send_refusal, 'cron', day_of_week="*", hour='0-23', minute=45)
 Config.scheduler.add_job(stops_key_ings, 'interval', minutes=5, start_date=datetime(2023, 10, 24, 13, 10, 0))
 Config.scheduler.add_job(stops_ings, 'interval', minutes=5, start_date=datetime(2023, 10, 24, 13, 12, 0))
 Config.scheduler.add_job(stops_rest, 'interval', minutes=5, start_date=datetime(2023, 10, 24, 13, 14, 0))
 Config.scheduler.add_job(stops_sector, 'interval', minutes=5, start_date=datetime(2023, 10, 24, 13, 16, 0))
 Config.scheduler.add_job(send_tickets, 'interval', minutes=5, start_date=datetime(2023, 10, 24, 13, 18, 0))
-Config.scheduler.add_job(application_stock, 'cron', day_of_week="*", hour=6, minute=0)
+Config.scheduler.add_job(application_stock, 'cron', day_of_week="*", hour=5, minute=0)
 
 
 @Config.dp.message_handler(CommandStart(), state=['*'])
@@ -264,7 +266,7 @@ async def live_functions(call: types.CallbackQuery, callback_data: dict):
         if orders:
             await call.answer('Подождите, отчет собирается')
             for order in orders:
-                await command_metrics(order, db, pool)
+                await command_metrics(order, db, pool, 'command')
             await call.message.answer(f'Выбери интересующее действие:', reply_markup=KeyLive.data_type)
             await States.command.set()
         else:
@@ -276,7 +278,7 @@ async def live_functions(call: types.CallbackQuery, callback_data: dict):
         if orders:
             await call.answer('Подождите, отчет собирается')
             for order in orders:
-                await command_revenue(order, db, pool)
+                await command_revenue(order, db, pool, 'command')
             await call.message.answer(f'Выбери интересующее действие:', reply_markup=KeyLive.data_type)
             await States.command.set()
         else:
@@ -326,7 +328,7 @@ async def stops_menu(call: types.CallbackQuery, state: FSMContext):
     await cleaner.delete_markup(call)
     await key.set_stops()
     await cleaner.delete_message(call.message)
-    await state.update_data(stc='States:rest')
+    await state.update_data(stc='States:rest', key_stop=key)
     await call.message.answer(f'Стопы', reply_markup=key.stops)
     await States.stops.set()
 
@@ -501,7 +503,7 @@ async def stationary(call: types.CallbackQuery, callback_data: dict, state: FSMC
         key = data['key']
         await pool.close()
         if data['order'].startswith('stops'):
-            await call.message.answer(f'Стопы', reply_markup=key.stops)
+            await call.message.answer(f'Стопы', reply_markup=data['key_stop'].stops)
             await state.update_data(stc='States:rest')
             await States.stops.set()
         else:

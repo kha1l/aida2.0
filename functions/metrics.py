@@ -18,7 +18,7 @@ async def change_revenue(today, week):
     return message
 
 
-async def command_metrics(order, db, pool):
+async def command_metrics(order, db, pool, types):
     logger = Log('metrics')
     send = Send(db=db)
     type_concept = {
@@ -39,8 +39,9 @@ async def command_metrics(order, db, pool):
     for i in range(0, len(order['uuid']), 29):
         batch = order['uuid'][i:i + 29]
         uuids = ','.join(batch)
-        delivery_stat = await post_api(f'https://api.dodois.io/{order["concept"]}/{order["country"]}/delivery/statistics/',
-                                       order["access"], units=uuids, _from=dt_start, to=dt_end)
+        delivery_stat = await post_api(
+            f'https://api.dodois.io/{order["concept"]}/{order["country"]}/delivery/statistics/',
+            order["access"], units=uuids, _from=dt_start, to=dt_end)
         product = await post_api(f'https://api.dodois.io/{order["concept"]}/{order["country"]}/production/productivity',
                                  order["access"], units=uuids, _from=dt_start, to=dt_end)
         handover = await post_api(f'https://api.dodois.io/{order["concept"]}/{order["country"]}'
@@ -117,22 +118,25 @@ async def command_metrics(order, db, pool):
                 perc_later_rest = round(count_stationary / order_rest * 100, 2)
             except ZeroDivisionError:
                 perc_later_rest = 0
-            message = f'\U0001F4CA <b>Ключевые метрики в заведении {rest["name"]}' \
-                      f' по состоянию на {dt_end.split("T")[-1].split(":")[0]} часов</b>\n\n' \
-                      f'Выручка: {rev}\n' \
-                      f'Производительность: {int(productivity)}\n' \
-                      f'Продуктов на чел/час: {str(prod_hour).replace(".", ",")}\n' \
-                      f'Сотрудники на смене:\n' \
-                      f'        Кухня:        {staff}\n' \
-                      f'        Курьеры:  {courier}\n' \
-                      f'Скорость доставки: {avg_delivery}\n' \
-                      f'Среднее время курьера с заказом в пути: {trip}\n' \
-                      f'Время на полке: {shelf}\n' \
-                      f'Заказов на курьера/час: {str(orders_hour).replace(".", ",")}\n' \
-                      f'Сертификаты: {cert}\n' \
-                      f'Время приготовления в ресторан: {time_rest}\n' \
-                      f'Время приготовления на доставку: {cooking}\n' \
-                      f'Процент долгих приготовлений: {perc_later_rest}%\n'
+            if types == 'func':
+                message = f'\U0001F4CA <b>Ключевые метрики в заведении {rest["name"]}' \
+                          f' по состоянию на {dt_end.split("T")[-1].split(":")[0]} часов</b>\n\n'
+            else:
+                message = f'\U0001F4CA <b>Ключевые метрики в заведении {rest["name"]}\n\n'
+            message += f'Выручка: {rev}\n' \
+                       f'Производительность: {int(productivity)}\n' \
+                       f'Продуктов на чел/час: {str(prod_hour).replace(".", ",")}\n' \
+                       f'Сотрудники на смене:\n' \
+                       f'        Кухня:        {staff}\n' \
+                       f'        Курьеры:  {courier}\n' \
+                       f'Скорость доставки: {avg_delivery}\n' \
+                       f'Среднее время курьера с заказом в пути: {trip}\n' \
+                       f'Время на полке: {shelf}\n' \
+                       f'Заказов на курьера/час: {str(orders_hour).replace(".", ",")}\n' \
+                       f'Сертификаты: {cert}\n' \
+                       f'Время приготовления в ресторан: {time_rest}\n' \
+                       f'Время приготовления на доставку: {cooking}\n' \
+                       f'Процент долгих приготовлений: {perc_later_rest}%\n'
             await send.sending(order["chat_id"], message, logger, order['id'])
 
 
@@ -144,5 +148,5 @@ async def send_metrics():
     for order in orders:
         hour = datetime.now().hour - 3 + order['timezone']
         if hour in hours:
-            await command_metrics(order, db, pool)
+            await command_metrics(order, db, pool, 'func')
     await pool.close()

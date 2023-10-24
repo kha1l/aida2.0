@@ -13,6 +13,17 @@ async def change_orders():
         units_sub[unit['uuid']] = unit['subs']
     for order in orders:
         uuids = order['uuid']
+        add_uuids = []
         for uuid in uuids:
-            pass
+            value = units_sub.get(uuid)
+            if value:
+                if value == 'premium':
+                    add_uuids.append(uuid)
+        if uuids != add_uuids:
+            if add_uuids:
+                await db.update_order_with_subs(pool, order['id'], add_uuids)
+                logger.info(f'UPDATE order id = {order["id"]} on user_id = {order["user_id"]}')
+            else:
+                await db.drop_order(pool, order['id'])
+                logger.info(f'DROP order id = {order["id"]} on user_id = {order["user_id"]}')
     await pool.close()
