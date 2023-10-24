@@ -138,7 +138,7 @@ async def start_func(message: types.Message, state: FSMContext):
                                  f'Я - Aida. Помогаю удаленно управлять рестораном или сетью ресторанов '
                                  f'Dodo Brands и принимать правильные управленческие решения.\n'
                                  f'Авторизуйтесь на странице приложения в маркетплейсе\n'
-                                 f'https://marketplace.dodois.io/apps/11ECF3AAF97D059CB9706F21406EBD44')
+                                 f'https://marketplace.dodois.io/apps/11ECF3AAF97D059CB9706F21406EBD11')
     await pool.close()
 
 

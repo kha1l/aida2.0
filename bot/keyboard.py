@@ -185,7 +185,7 @@ class KeySettings:
         [
             InlineKeyboardButton(
                 text=f'\U0001F4F1 Управлять приложением',
-                url='https://marketplace.dodois.io/apps/11ECF3AAF97D059CB9706F21406EBD44'
+                url='https://marketplace.dodois.io/apps/11ECF3AAF97D059CB9706F21406EBD11'
             )],
         [
             InlineKeyboardButton(
