@@ -39,11 +39,11 @@ Config.scheduler.add_job(send_staff, 'cron', day_of_week="*", hour='0-23', minut
 Config.scheduler.add_job(send_stationary, 'cron', day_of_week="*", hour='0-23', minute=15)
 Config.scheduler.add_job(send_revenue, 'cron', day_of_week="*", hour='0-23', minute=30)
 Config.scheduler.add_job(send_refusal, 'cron', day_of_week="*", hour='0-23', minute=45)
-Config.scheduler.add_job(stops_key_ings, 'interval', minutes=5, start_date=datetime(2023, 10, 24, 17, 0, 0))
-Config.scheduler.add_job(stops_ings, 'interval', minutes=5, start_date=datetime(2023, 10, 24, 17, 2, 0))
-Config.scheduler.add_job(stops_rest, 'interval', minutes=5, start_date=datetime(2023, 10, 24, 17, 4, 0))
-Config.scheduler.add_job(stops_sector, 'interval', minutes=5, start_date=datetime(2023, 10, 24, 17, 6, 0))
-Config.scheduler.add_job(send_tickets, 'interval', minutes=5, start_date=datetime(2023, 10, 24, 17, 8, 0))
+Config.scheduler.add_job(stops_key_ings, 'interval', minutes=5, start_date=datetime(2023, 10, 25, 11, 10, 0))
+Config.scheduler.add_job(stops_ings, 'interval', minutes=5, start_date=datetime(2023, 10, 25, 11, 12, 0))
+Config.scheduler.add_job(stops_rest, 'interval', minutes=5, start_date=datetime(2023, 10, 25, 11, 14, 0))
+Config.scheduler.add_job(stops_sector, 'interval', minutes=5, start_date=datetime(2023, 10, 25, 11, 16, 0))
+Config.scheduler.add_job(send_tickets, 'interval', minutes=5, start_date=datetime(2023, 10, 25, 11, 18, 0))
 Config.scheduler.add_job(application_stock, 'cron', day_of_week="*", hour=5, minute=0)
 
 
@@ -64,33 +64,35 @@ async def start_func(message: types.Message, state: FSMContext):
         if not account:
             data = DataUser(user.access)
             await data.get_person()
-            record = await db.add_user(pool, user_id, message.from_user.username,
-                                       message.from_user.first_name, user.sub, dt_now)
-            await db.add_person(pool, record['id'], data)
-            await db.add_tokens(pool, record['id'], user.access, user.refresh)
-            access_units, subs = await add_stationary(record['id'], user.access)
-            logger.info(f'Add new user {record["id"]} {message.from_user.username}')
-            for units in access_units:
-                reach = await db.check_stationary(pool, units['uuid'])
-                if reach:
-                    minutes = reach['timezone'] * 60 - 180
-                    dt = ((dt_now.replace(minute=0, second=0, microsecond=0)) + timedelta(
-                        minutes=minutes)).date()
-                    dt_str = datetime.strftime(dt, '%Y-%m-%d')
-                    if reach['subs'] != units['subs'] or reach['expires'] != units['expires'] \
-                            or units['user_id'] not in reach['user_id']:
-                        await db.update_stationary(pool, units, reach['id'], dt_str)
-                else:
-                    await db.add_stationary(pool, units, 'None')
-            sorted_units = sorted(access_units, key=lambda x: x["name"])
-            await state.update_data(units=sorted_units, user_id=record['id'])
-            await cleaner.delete_message(mess)
-            await message.answer(f'Привет, {message.from_user.full_name}! \n\n'
-                                 f'Я - Aida. Помогаю удаленно управлять рестораном или сетью ресторанов '
-                                 f'Dodo Brands и принимать правильные управленческие решения.',
-                                 reply_markup=KeyStart.type_order)
-            await States.types.set()
-
+            try:
+                record = await db.add_user(pool, user_id, message.from_user.username,
+                                           message.from_user.first_name, user.sub, dt_now)
+                await db.add_person(pool, record['id'], data)
+                await db.add_tokens(pool, record['id'], user.access, user.refresh)
+                access_units, subs = await add_stationary(record['id'], user.access)
+                logger.info(f'Add new user {record["id"]} {message.from_user.username}')
+                for units in access_units:
+                    reach = await db.check_stationary(pool, units['uuid'])
+                    if reach:
+                        minutes = reach['timezone'] * 60 - 180
+                        dt = ((dt_now.replace(minute=0, second=0, microsecond=0)) + timedelta(
+                            minutes=minutes)).date()
+                        dt_str = datetime.strftime(dt, '%Y-%m-%d')
+                        if reach['subs'] != units['subs'] or reach['expires'] != units['expires'] \
+                                or units['user_id'] not in reach['user_id']:
+                            await db.update_stationary(pool, units, reach['id'], dt_str)
+                    else:
+                        await db.add_stationary(pool, units, 'None')
+                sorted_units = sorted(access_units, key=lambda x: x["name"])
+                await state.update_data(units=sorted_units, user_id=record['id'])
+                await cleaner.delete_message(mess)
+                await message.answer(f'Привет, {message.from_user.full_name}! \n\n'
+                                     f'Я - Aida. Помогаю удаленно управлять рестораном или сетью ресторанов '
+                                     f'Dodo Brands и принимать правильные управленческие решения.',
+                                     reply_markup=KeyStart.type_order)
+                await States.types.set()
+            except Exception as e:
+                await message.answer(f'Что то пошло не так..\nПопробуте повторить действие {e}')
         else:
             await db.update_tokens(pool, account['id'], user.access, user.refresh)
             logger.info(f'Update user {account["id"]}')
@@ -353,9 +355,10 @@ async def stationary(call: types.CallbackQuery, callback_data: dict, state: FSMC
         tz = params['timezone']
         concept = params['concept']
     except KeyError:
-        code = 'ru'
-        tz = 3
-        concept = 'dodopizza'
+        data_unit = await db.get_data_rest(pool, params['uuid'])
+        code = data_unit['country_code']
+        tz = data_unit['timezone']
+        concept = data_unit['concept']
     state_now = await state.get_state()
     orders = await db.get_orders(pool, str(call.message.chat.id), callback_data['order'], code, tz, concept)
     access_stock = await db.get_units_stock(pool)

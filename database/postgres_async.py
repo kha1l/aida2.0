@@ -248,7 +248,8 @@ class AsyncDatabase:
 
     async def get_data_rest(self, pool, uuid):
         sql = '''
-            SELECT name, unit_id FROM aida_stationary WHERE uuid = $1
+            SELECT name, unit_id, country_code, timezone, concept
+            FROM aida_stationary WHERE uuid = $1
         '''
         params = (uuid, )
         return await self.execute(pool, sql, parameters=params, fetchone=True)
