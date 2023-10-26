@@ -82,7 +82,8 @@ async def start_func(message: types.Message, state: FSMContext):
                                 or units['user_id'] not in reach['user_id']:
                             await db.update_stationary(pool, units, reach['id'], dt_str)
                     else:
-                        await db.add_stationary(pool, units, 'None')
+                        dt_begin = datetime.strftime(datetime.now().date(), '%Y-%m-%d')
+                        await db.add_stationary(pool, units, 'None', dt_begin)
                 sorted_units = sorted(access_units, key=lambda x: x["name"])
                 await state.update_data(units=sorted_units, user_id=record['id'])
                 await cleaner.delete_message(mess)
@@ -111,7 +112,8 @@ async def start_func(message: types.Message, state: FSMContext):
                                 or reach['subs'] != units['subs']:
                             await db.update_stationary_sub_and_expires(pool, units, reach['id'], dt_str)
                 else:
-                    await db.add_stationary(pool, units, 'None')
+                    dt_begin = datetime.strftime(datetime.now().date(), '%Y-%m-%d')
+                    await db.add_stationary(pool, units, 'None', dt_begin)
             sorted_units = sorted(access_units, key=lambda x: x["name"])
             await state.update_data(units=sorted_units, user_id=account['id'])
             await cleaner.delete_message(mess)
@@ -480,7 +482,7 @@ async def stationary(call: types.CallbackQuery, callback_data: dict, state: FSMC
             await key.set_rest(data['order'], data['units'], orders, data['subs_dict'], units_stock=data['stock'])
         else:
             await key.set_rest(data['order'], data['units'], orders, data['subs_dict'])
-        await asyncio.sleep(0.2)
+        await asyncio.sleep(0.3)
         await state.update_data(orders=orders, unit_add=unit_add, unit_del=unit_del, stock=data['stock'])
         await cleaner.edit_markup(call, key.rest)
     else:
@@ -506,8 +508,9 @@ async def stationary(call: types.CallbackQuery, callback_data: dict, state: FSMC
 
                 await db.drop_order(pool, id_order)
         else:
-            await db.add_order(pool, data['order'], data['orders'], data['user_id'],
-                               str(call.message.chat.id), data['code'], data['tz'], data['concept'])
+            if data['order']:
+                await db.add_order(pool, data['order'], data['orders'], data['user_id'],
+                                   str(call.message.chat.id), data['code'], data['tz'], data['concept'])
         key = data['key']
         await pool.close()
         if data['order'].startswith('stops'):

@@ -79,14 +79,14 @@ class AsyncDatabase:
         params = (access, refresh, id)
         await self.execute(pool, sql, parameters=params)
 
-    async def add_stationary(self, pool, unit, dt):
+    async def add_stationary(self, pool, unit, dt, begin):
         sql = '''
             INSERT INTO aida_stationary (name, uuid, unit_id, country_code, timezone, user_id, subs, expires, concept,
-            date_update)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+            date_update, date_begin)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
         '''
         params = (unit['name'], unit['uuid'], unit['id'], unit['code'], unit['tz'], [unit['user_id']],
-                  unit['subs'], unit['expires'], unit['concept'], dt)
+                  unit['subs'], unit['expires'], unit['concept'], dt, begin)
         await self.execute(pool, sql, parameters=params)
 
     async def check_stationary(self, pool, uuid):
@@ -114,11 +114,11 @@ class AsyncDatabase:
             UPDATE aida_stationary
             SET 
                 user_id = array_append(user_id, $2),
-                subs = $3, expires = $4, date_update = $5
+                subs = $3, expires = $4, date_update = $5, date_begin = $6
             WHERE
                 id = $1;
         '''
-        params = (id, unit['user_id'], unit['subs'], unit['expires'], dt)
+        params = (id, unit['user_id'], unit['subs'], unit['expires'], dt, dt)
         await self.execute(pool, sql, parameters=params)
 
     async def update_stationary_sub_and_expires(self, pool, unit, id, dt):
