@@ -39,11 +39,11 @@ Config.scheduler.add_job(send_staff, 'cron', day_of_week="*", hour='0-23', minut
 Config.scheduler.add_job(send_stationary, 'cron', day_of_week="*", hour='0-23', minute=15)
 Config.scheduler.add_job(send_revenue, 'cron', day_of_week="*", hour='0-23', minute=30)
 Config.scheduler.add_job(send_refusal, 'cron', day_of_week="*", hour='0-23', minute=45)
-Config.scheduler.add_job(stops_key_ings, 'interval', minutes=5, start_date=datetime(2023, 10, 25, 11, 10, 0))
-Config.scheduler.add_job(stops_ings, 'interval', minutes=5, start_date=datetime(2023, 10, 25, 11, 12, 0))
-Config.scheduler.add_job(stops_rest, 'interval', minutes=5, start_date=datetime(2023, 10, 25, 11, 14, 0))
-Config.scheduler.add_job(stops_sector, 'interval', minutes=5, start_date=datetime(2023, 10, 25, 11, 16, 0))
-Config.scheduler.add_job(send_tickets, 'interval', minutes=5, start_date=datetime(2023, 10, 25, 11, 18, 0))
+Config.scheduler.add_job(stops_key_ings, 'interval', minutes=5, start_date=datetime(2023, 10, 26, 9, 50, 0))
+Config.scheduler.add_job(stops_ings, 'interval', minutes=5, start_date=datetime(2023, 10, 26, 9, 52, 0))
+Config.scheduler.add_job(stops_rest, 'interval', minutes=5, start_date=datetime(2023, 10, 26, 9, 54, 0))
+Config.scheduler.add_job(stops_sector, 'interval', minutes=5, start_date=datetime(2023, 10, 26, 9, 56, 0))
+Config.scheduler.add_job(send_tickets, 'interval', minutes=5, start_date=datetime(2023, 10, 26, 9, 58, 0))
 Config.scheduler.add_job(application_stock, 'cron', day_of_week="*", hour=5, minute=0)
 
 
