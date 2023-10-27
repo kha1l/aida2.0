@@ -71,19 +71,22 @@ async def start_func(message: types.Message, state: FSMContext):
                 await db.add_tokens(pool, record['id'], user.access, user.refresh)
                 access_units, subs = await add_stationary(record['id'], user.access)
                 logger.info(f'Add new user {record["id"]} {message.from_user.username}')
-                for units in access_units:
-                    reach = await db.check_stationary(pool, units['uuid'])
-                    if reach:
-                        minutes = reach['timezone'] * 60 - 180
-                        dt = ((dt_now.replace(minute=0, second=0, microsecond=0)) + timedelta(
-                            minutes=minutes)).date()
-                        dt_str = datetime.strftime(dt, '%Y-%m-%d')
-                        if reach['subs'] != units['subs'] or reach['expires'] != units['expires'] \
-                                or units['user_id'] not in reach['user_id']:
-                            await db.update_stationary(pool, units, reach['id'], dt_str)
-                    else:
-                        dt_begin = datetime.strftime(datetime.now().date(), '%Y-%m-%d')
-                        await db.add_stationary(pool, units, 'None', dt_begin)
+                try:
+                    for units in access_units:
+                        reach = await db.check_stationary(pool, units['uuid'])
+                        if reach:
+                            minutes = reach['timezone'] * 60 - 180
+                            dt = ((dt_now.replace(minute=0, second=0, microsecond=0)) + timedelta(
+                                minutes=minutes)).date()
+                            dt_str = datetime.strftime(dt, '%Y-%m-%d')
+                            if reach['subs'] != units['subs'] or reach['expires'] != units['expires'] \
+                                    or units['user_id'] not in reach['user_id']:
+                                await db.update_stationary(pool, units, reach['id'], dt_str)
+                        else:
+                            dt_begin = datetime.strftime(datetime.now().date(), '%Y-%m-%d')
+                            await db.add_stationary(pool, units, 'None', dt_begin)
+                except TypeError as e:
+                    logger.error(f'Error type {e}')
                 sorted_units = sorted(access_units, key=lambda x: x["name"])
                 await state.update_data(units=sorted_units, user_id=record['id'])
                 await cleaner.delete_message(mess)
@@ -98,22 +101,25 @@ async def start_func(message: types.Message, state: FSMContext):
             await db.update_tokens(pool, account['id'], user.access, user.refresh)
             logger.info(f'Update user {account["id"]}')
             access_units, subs = await add_stationary(account['id'], user.access)
-            for units in access_units:
-                reach = await db.check_stationary(pool, units['uuid'])
-                if reach:
-                    minutes = reach['timezone'] * 60 - 180
-                    dt = ((datetime.now().replace(minute=0, second=0, microsecond=0)) + timedelta(
-                        minutes=minutes)).date()
-                    dt_str = datetime.strftime(dt, '%Y-%m-%d')
-                    if units['user_id'] not in reach['user_id']:
-                        await db.update_stationary(pool, units, reach['id'], dt_str)
+            try:
+                for units in access_units:
+                    reach = await db.check_stationary(pool, units['uuid'])
+                    if reach:
+                        minutes = reach['timezone'] * 60 - 180
+                        dt = ((datetime.now().replace(minute=0, second=0, microsecond=0)) + timedelta(
+                            minutes=minutes)).date()
+                        dt_str = datetime.strftime(dt, '%Y-%m-%d')
+                        if units['user_id'] not in reach['user_id']:
+                            await db.update_stationary(pool, units, reach['id'], dt_str)
+                        else:
+                            if reach['expires'] != units['expires'] \
+                                    or reach['subs'] != units['subs']:
+                                await db.update_stationary_sub_and_expires(pool, units, reach['id'], dt_str)
                     else:
-                        if reach['expires'] != units['expires'] \
-                                or reach['subs'] != units['subs']:
-                            await db.update_stationary_sub_and_expires(pool, units, reach['id'], dt_str)
-                else:
-                    dt_begin = datetime.strftime(datetime.now().date(), '%Y-%m-%d')
-                    await db.add_stationary(pool, units, 'None', dt_begin)
+                        dt_begin = datetime.strftime(datetime.now().date(), '%Y-%m-%d')
+                        await db.add_stationary(pool, units, 'None', dt_begin)
+            except TypeError as e:
+                logger.error(f'Error type {e}')
             sorted_units = sorted(access_units, key=lambda x: x["name"])
             await state.update_data(units=sorted_units, user_id=account['id'])
             await cleaner.delete_message(mess)
@@ -142,7 +148,10 @@ async def start_func(message: types.Message, state: FSMContext):
                                  f'Я - Aida. Помогаю удаленно управлять рестораном или сетью ресторанов '
                                  f'Dodo Brands и принимать правильные управленческие решения.\n'
                                  f'Авторизуйтесь на странице приложения в маркетплейсе\n'
-                                 f'https://marketplace.dodois.io/apps/11ECF3AAF97D059CB9706F21406EBD11')
+                                 f'https://marketplace.dodois.io/apps/11ECF3AAF97D059CB9706F21406EBD11\n\n'
+                                 f'При вознекновении проблем обратитесь к базе знаний по ссылке '
+                                 f'https://aida.kaiten.site или напишите в чат поддержки Aida Community '
+                                 f'https://t.me/+TSY5w7zNctg4NzBi')
     await pool.close()
 
 
