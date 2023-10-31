@@ -314,3 +314,29 @@ class AsyncDatabase:
         '''
         params = (*uuids, )
         return await self.execute(pool, sql, parameters=params, fetchall=True)
+
+    async def get_data_free_users(self, pool):
+        sql = f'''
+        SELECT user_id FROM aida_stationary WHERE subs = 'free'
+         '''
+        return await self.execute(pool, sql, fetchall=True)
+
+    async def get_data_given_name(self, pool):
+        sql = f'''
+        SELECT id, user_id, name FROM aida_users
+        '''
+        return await self.execute(pool, sql, fetchall=True)
+
+    async def get_all_id_users(self, pool):
+        sql = f'''
+        SELECT id FROM aida_users
+        '''
+        return await self.execute(pool, sql, fetchall=True)
+
+    async def edit_user_id(self, pool, id_stationary, list_user_id):
+        sql = f'''
+        UPDATE aida_stationary
+        SET user_id = $2 WHERE id = $1
+        '''
+        params = (id_stationary, list_user_id)
+        await self.execute(pool, sql, parameters=params)

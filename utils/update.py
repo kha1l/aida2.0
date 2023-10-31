@@ -29,7 +29,7 @@ async def update_subs(**kwargs):
                         await db.update_stationary_sub_and_expires(pool, units, reach['id'], dt_str)
             else:
                 add_units.append(units['name'])
-                await db.add_stationary(pool, units, 'None')
+                await db.add_stationary(pool, units, 'None', 'None')
         await pool.close()
         return add_units, upd_units
     except KeyError:
@@ -61,12 +61,23 @@ async def update_subs_day():
     db = AsyncDatabase()
     pool = await db.create_pool()
     units = await db.get_stationary(pool)
+    all_ids = await db.get_all_id_users(pool)
+    all_id = []
+    for id in all_ids:
+        all_id.append(id['id'])
     date_update = datetime.now().date()
     dt = datetime.strftime(date_update, '%Y-%m-%d')
     for unit in units:
         step = 0
         tokens = None
         data = {}
+        id_stationary = unit['id']
+        list_user_id = unit['user_id'].copy()
+        for id in unit['user_id']:
+            if id not in all_id:
+                list_user_id.remove(id)
+        if list_user_id != unit['user_id']:
+            await db.edit_user_id(pool, id_stationary, list_user_id)
         if dt != unit['date_update']:
             while not tokens:
                 try:
