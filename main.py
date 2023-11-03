@@ -30,23 +30,23 @@ import asyncio
 
 
 Config.scheduler.add_job(send_premium_message, 'cron', day_of_week='*', hour=13, minute=21)
-# Config.scheduler.add_job(change_orders, 'cron', day_of_week='*', hour=2, minute=0)
-# Config.scheduler.add_job(update_subs_day, 'cron', day_of_week='*', hour=13, minute=13)
-# Config.scheduler.add_job(update_tokens_app, 'interval', hours=12)
-# Config.scheduler.add_job(send_stock, 'cron', day_of_week="*", hour=8, minute=0)
-# Config.scheduler.add_job(send_birthday, 'cron', day_of_week="*", hour='0-23', minute=15)
-# Config.scheduler.add_job(send_metrics, 'cron', day_of_week="*", hour='0-23', minute=0)
-# Config.scheduler.add_job(send_couriers, 'cron', day_of_week="*", hour='0-23', minute=15)
-# Config.scheduler.add_job(send_staff, 'cron', day_of_week="*", hour='0-23', minute=30)
-# Config.scheduler.add_job(send_stationary, 'cron', day_of_week="*", hour='0-23', minute=15)
-# Config.scheduler.add_job(send_revenue, 'cron', day_of_week="*", hour='0-23', minute=30)
-# Config.scheduler.add_job(send_refusal, 'cron', day_of_week="*", hour='0-23', minute=45)
-# Config.scheduler.add_job(stops_key_ings, 'interval', minutes=5, start_date=datetime(2023, 10, 27, 9, 30, 0))
-# Config.scheduler.add_job(stops_ings, 'interval', minutes=5, start_date=datetime(2023, 10, 27, 9, 32, 0))
-# Config.scheduler.add_job(stops_rest, 'interval', minutes=5, start_date=datetime(2023, 10, 27, 9, 34, 0))
-# Config.scheduler.add_job(stops_sector, 'interval', minutes=5, start_date=datetime(2023, 10, 27, 9, 36, 0))
-# Config.scheduler.add_job(send_tickets, 'interval', minutes=5, start_date=datetime(2023, 10, 27, 9, 38, 0))
-# Config.scheduler.add_job(application_stock, 'cron', day_of_week="*", hour=5, minute=0)
+Config.scheduler.add_job(change_orders, 'cron', day_of_week='*', hour=2, minute=0)
+Config.scheduler.add_job(update_subs_day, 'cron', day_of_week='*', hour=13, minute=13)
+Config.scheduler.add_job(update_tokens_app, 'interval', hours=12)
+Config.scheduler.add_job(send_stock, 'cron', day_of_week="*", hour=8, minute=0)
+Config.scheduler.add_job(send_birthday, 'cron', day_of_week="*", hour='0-23', minute=15)
+Config.scheduler.add_job(send_metrics, 'cron', day_of_week="*", hour='0-23', minute=0)
+Config.scheduler.add_job(send_couriers, 'cron', day_of_week="*", hour='0-23', minute=15)
+Config.scheduler.add_job(send_staff, 'cron', day_of_week="*", hour='0-23', minute=30)
+Config.scheduler.add_job(send_stationary, 'cron', day_of_week="*", hour='0-23', minute=15)
+Config.scheduler.add_job(send_revenue, 'cron', day_of_week="*", hour='0-23', minute=30)
+Config.scheduler.add_job(send_refusal, 'cron', day_of_week="*", hour='0-23', minute=45)
+Config.scheduler.add_job(stops_key_ings, 'interval', minutes=5, start_date=datetime(2023, 10, 27, 9, 30, 0))
+Config.scheduler.add_job(stops_ings, 'interval', minutes=5, start_date=datetime(2023, 10, 27, 9, 32, 0))
+Config.scheduler.add_job(stops_rest, 'interval', minutes=5, start_date=datetime(2023, 10, 27, 9, 34, 0))
+Config.scheduler.add_job(stops_sector, 'interval', minutes=5, start_date=datetime(2023, 10, 27, 9, 36, 0))
+Config.scheduler.add_job(send_tickets, 'interval', minutes=5, start_date=datetime(2023, 10, 27, 9, 38, 0))
+Config.scheduler.add_job(application_stock, 'cron', day_of_week="*", hour=5, minute=0)
 
 
 @Config.dp.message_handler(CommandStart(), state=['*'])
@@ -277,7 +277,7 @@ async def live_functions(call: types.CallbackQuery, callback_data: dict):
     cleaner = Clean()
     await cleaner.delete_message(call.message)
     if callback == 'metrics':
-        orders = await db.select_orders_metrics(pool, 'metrics', str(call.from_user.id))
+        orders = await db.select_orders_metrics(pool, 'metrics', str(call.message.chat.id))
         if orders:
             await call.answer('Подождите, отчет собирается')
             for order in orders:
@@ -289,7 +289,7 @@ async def live_functions(call: types.CallbackQuery, callback_data: dict):
                                       reply_markup=KeyLive.data_type)
             await States.command.set()
     else:
-        orders = await db.select_orders_metrics(pool, 'revenue', str(call.from_user.id))
+        orders = await db.select_orders_metrics(pool, 'revenue', str(call.message.chat.id))
         if orders:
             await call.answer('Подождите, отчет собирается')
             for order in orders:
